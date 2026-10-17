@@ -273,6 +273,8 @@ class Parser:
         if s.acc("continua"):
             s.exp(";")
             return N("continue", ln)
+        if s.acc("rimanda"):
+            return N("defer", ln, istr=s.stmt())
         if s.acc("rischio"):
             return N("risk", ln, b=s.blocco())
         if s.is_("{"):

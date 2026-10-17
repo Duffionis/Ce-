@@ -28,7 +28,7 @@ AddressSanitizer + UBSan (useful once you use `rischio`).
 ## The language
 
 Keywords: `funzione struttura variabile costante se altrimenti mentre per in
-ritorna interrompi continua vero falso rischio esterna come usa`.
+ritorna interrompi continua vero falso rischio esterna come usa rimanda`.
 English keywords (`if`, `while`, `return`, ...) are rejected with a hint
 ("'if' e' inglese: in Ce++ si scrive 'se'").
 
@@ -64,6 +64,24 @@ circular imports are an error. All modules share one namespace: two files
 defining the same name is an error (no shadowing, as everywhere in Ce++).
 Errors and `panico` messages name the file and line of the module they come from.
 
+## Cleanup with `rimanda`
+
+    variabile f: *Fle = apri(...);
+    rimanda chiudi(f);        // runs when the enclosing block exits
+
+`rimanda <statement>` (or `rimanda { ... }`) runs when the enclosing block
+ends: at the closing `}`, or earlier through `ritorna`, `interrompi` or
+`continua`. Several `rimanda` in one block run in reverse order (last first).
+Rules:
+
+- Only the `rimanda` already reached at the exit point run (an early `ritorna`
+  before a `rimanda` line does not run it).
+- A returned value is computed before the deferred code runs.
+- Deferred code reads variables when it runs, not when it was written.
+- It cannot contain `ritorna`, or `interrompi`/`continua` that would leave it,
+  and cannot contain another `rimanda`.
+- `panico` stops the program immediately (exit 101) and does not run them.
+
 ## Known limits (v0.1, be honest about them)
 
 - Dangling slices are only partly prevented (struct fields holding slices,
@@ -85,6 +103,6 @@ Errors and `panico` messages name the file and line of the module they come from
 
 ## Ideas for later
 
-Private names / `pubblico`, `rimanda` (defer), option/result types, an allocator API, real
+Private names / `pubblico`, option/result types, an allocator API, real
 lifetime checking for slices, packed structs and bit fields (emulator work),
 a direct backend instead of C.

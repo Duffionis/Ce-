@@ -17,7 +17,7 @@ class ErroreCe(Exception):
 PAROLE_CHIAVE = {
     "funzione", "struttura", "variabile", "costante", "se", "altrimenti",
     "mentre", "per", "in", "ritorna", "interrompi", "continua",
-    "vero", "falso", "rischio", "esterna", "come", "usa",
+    "vero", "falso", "rischio", "esterna", "come", "usa", "rimanda",
 }
 
 # Parole inglesi vietate: danno un errore che spiega come si scrive in Ce++.
@@ -26,7 +26,7 @@ INGLESE = {
     "return": "ritorna", "break": "interrompi", "continue": "continua",
     "struct": "struttura", "true": "vero", "false": "falso",
     "const": "costante", "let": "variabile", "var": "variabile",
-    "fn": "funzione", "func": "funzione", "function": "funzione",
+    "fn": "funzione", "defer": "rimanda", "func": "funzione", "function": "funzione",
     "extern": "esterna", "unsafe": "rischio", "as": "come",
     "void": "vuoto", "int": "intero", "bool": "booleano",
     "char": "carattere", "float": "decimale", "double": "doppio",

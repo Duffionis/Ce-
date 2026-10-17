@@ -1,0 +1,7 @@
+//! non puo' uscire da un 'rimanda'
+funzione principale() -> i32 {
+    per i in 0..3 {
+        rimanda { interrompi; }
+    }
+    ritorna 0;
+}

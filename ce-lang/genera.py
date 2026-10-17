@@ -159,6 +159,7 @@ class Gen:
     def __init__(s, fname):
         s.fname = fname
         s.main = fname
+        s.dframes = []   # un blocco per ogni '{': codice C dei 'rimanda' in attesa
         s.cur = None   # file del nodo in lavorazione (None = file principale)
         s.cfile = s.cesc(fname)
         s.structs, s.defined, s.funcs, s.cvals = {}, set(), {}, {}
@@ -639,11 +640,54 @@ class Gen:
             s.err(f"la condizione deve essere un booleano, non {tstr(c.t)}", node.line)
         return c.c
 
-    def body(s, stmts, ind):
+    def body(s, stmts, ind, loop=False):
         s.scopes.append({})
+        s.stmts(stmts, ind, loop)
+        s.scopes.pop()
+
+    def stmts(s, stmts, ind, loop=False):
+        """Un blocco: esegue le istruzioni e, a fine blocco, i 'rimanda' (in ordine inverso)."""
+        s.dframes.append({"code": [], "loop": loop})
         for x in stmts:
             s.st(x, ind)
+        fr = s.dframes.pop()
+        if fr["code"] and not ends(stmts):
+            for code in reversed(fr["code"]):
+                s.L.extend(code)
+
+    def uscita(s, solo_ciclo):
+        """C dei 'rimanda' da eseguire uscendo: tutti (ritorna) o fino al ciclo (interrompi/continua)."""
+        out = []
+        for fr in reversed(s.dframes):
+            for code in reversed(fr["code"]):
+                out.extend(code)
+            if solo_ciclo and fr["loop"]:
+                break
+        return out
+
+    def check_defer(s, n, loops):
+        if n.k == "ret":
+            s.err("'ritorna' non e' permesso dentro 'rimanda'", n.line)
+        if n.k == "defer":
+            s.err("'rimanda' dentro 'rimanda' non e' permesso", n.line)
+        if n.k in ("break", "continue") and not loops:
+            s.err(f"'{'interrompi' if n.k == 'break' else 'continua'}' non puo' uscire da un 'rimanda'", n.line)
+        inner = loops + (n.k in ("while", "range", "each"))
+        for v in n.__dict__.values():
+            for c in (v if isinstance(v, list) else [v]):
+                if isinstance(c, N):
+                    s.check_defer(c, inner)
+
+    def st_defer(s, n, ind):
+        s.check_defer(n.istr, 0)
+        saved, s.L = s.L, []
+        s.scopes.append({})
+        s.put(ind, "{")
+        s.st(n.istr, ind + 1)
+        s.put(ind, "}")
         s.scopes.pop()
+        code, s.L = s.L, saved
+        s.dframes[-1]["code"].append(code)
 
     def st_var(s, n, ind):
         if n.ty is not None:
@@ -675,7 +719,7 @@ class Gen:
     def st_while(s, n, ind):
         s.put(ind, f"while ({s.cond_code(n.c)}) {{")
         s.loops += 1
-        s.body(n.b, ind + 1)
+        s.body(n.b, ind + 1, True)
         s.loops -= 1
         s.put(ind, "}")
 
@@ -693,8 +737,7 @@ class Gen:
         cv = s.declare(n.v, a.t, False, n.line)
         s.put(ind, f"for ({s.ctype(a.t)} {cv} = {a.c}, _e{u} = {b.c}; {cv} < _e{u}; {cv}++) {{")
         s.loops += 1
-        for x in n.body:
-            s.st(x, ind + 1)
+        s.stmts(n.body, ind + 1, True)
         s.loops -= 1
         s.put(ind, "}")
         s.scopes.pop()
@@ -710,8 +753,7 @@ class Gen:
         s.put(ind + 1, f"for (size_t _k{u} = 0; _k{u} < _s{u}.len; _k{u}++) {{")
         s.put(ind + 2, f"{s.ctype(st[1])} {cv} = _s{u}.ptr[_k{u}];")
         s.loops += 1
-        for x in n.body:
-            s.st(x, ind + 2)
+        s.stmts(n.body, ind + 2, True)
         s.loops -= 1
         s.put(ind + 1, "}")
         s.put(ind, "}")
@@ -730,7 +772,14 @@ class Gen:
         if n.e is None:
             if s.ret != VOID:
                 s.err("manca il valore da ritornare", n.line)
-            s.put(ind, "return;")
+            pend = s.uscita(False)
+            if pend:
+                s.put(ind, "{")
+                s.L.extend(pend)
+                s.put(ind + 1, "return;")
+                s.put(ind, "}")
+            else:
+                s.put(ind, "return;")
             return
         if s.ret == VOID:
             s.err("questa funzione non ritorna valori", n.line)
@@ -738,17 +787,39 @@ class Gen:
         if s.ret[0] == "s" and not s.slice_ret_ok(n.e):
             s.err("una fetta ritornata potrebbe puntare a dati locali: ritorna un "
                   "parametro-fetta, una sua sotto-fetta o una stringa letterale", n.line)
-        s.put(ind, f"return {code};")
+        pend = s.uscita(False)
+        if pend:
+            s.put(ind, "{")
+            s.put(ind + 1, f"{s.ctype(s.ret)} _rv = {code};")
+            s.L.extend(pend)
+            s.put(ind + 1, "return _rv;")
+            s.put(ind, "}")
+        else:
+            s.put(ind, f"return {code};")
 
     def st_break(s, n, ind):
         if not s.loops:
             s.err("'interrompi' fuori da un ciclo", n.line)
-        s.put(ind, "break;")
+        pend = s.uscita(True)
+        if pend:
+            s.put(ind, "{")
+            s.L.extend(pend)
+            s.put(ind + 1, "break;")
+            s.put(ind, "}")
+        else:
+            s.put(ind, "break;")
 
     def st_continue(s, n, ind):
         if not s.loops:
             s.err("'continua' fuori da un ciclo", n.line)
-        s.put(ind, "continue;")
+        pend = s.uscita(True)
+        if pend:
+            s.put(ind, "{")
+            s.L.extend(pend)
+            s.put(ind + 1, "continue;")
+            s.put(ind, "}")
+        else:
+            s.put(ind, "continue;")
 
     def st_risk(s, n, ind):
         s.risk += 1
@@ -862,8 +933,8 @@ class Gen:
         s.L = [f'#line {f.line} "{s.cfile}"',
                f"static {s.ctype(ret)} f_{s.cid(f.name)}({', '.join(plist) or 'void'}) {{"]
         s.scopes.append({})
-        for x in f.body:
-            s.st(x, 1)
+        s.dframes = []
+        s.stmts(f.body, 1)
         s.scopes.pop()
         if ret != VOID and not ends(f.body):
             s.err(f"la funzione '{f.name}' non ritorna un valore su tutti i percorsi", f.line)

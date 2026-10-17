@@ -1,0 +1,15 @@
+//> dentro
+//> blocco
+//> corpo
+//> fine 2
+//> fine 1
+funzione principale() -> i32 {
+    rimanda stampa("fine 1");
+    rimanda stampa("fine 2");
+    {
+        rimanda stampa("blocco");
+        stampa("dentro");
+    }
+    stampa("corpo");
+    ritorna 0;
+}

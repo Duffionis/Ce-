@@ -1,0 +1,17 @@
+//> uno
+//> chiusura
+//> due
+//> chiusura
+funzione lavora(x: i32) {
+    rimanda stampa("chiusura");
+    se x == 1 {
+        stampa("uno");
+        ritorna;
+    }
+    stampa("due");
+}
+funzione principale() -> i32 {
+    lavora(1);
+    lavora(2);
+    ritorna 0;
+}

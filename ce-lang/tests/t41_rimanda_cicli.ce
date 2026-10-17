@@ -1,0 +1,15 @@
+//> corpo 0
+//> fine 0
+//> fine 1
+//> fine 2
+//> fuori
+funzione principale() -> i32 {
+    per i in 0..4 {
+        rimanda stampa("fine ", i);
+        se i == 1 { continua; }
+        se i == 2 { interrompi; }
+        stampa("corpo ", i);
+    }
+    stampa("fuori");
+    ritorna 0;
+}
