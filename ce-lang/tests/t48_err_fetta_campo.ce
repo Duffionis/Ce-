@@ -1,0 +1,10 @@
+//! sopravvivrebbe
+struttura S { f: [i32] }
+funzione principale() -> i32 {
+    variabile s: S;
+    se vero {
+        variabile a: [i32; 2] = [1, 2];
+        s.f = a[0..1];
+    }
+    ritorna 0;
+}

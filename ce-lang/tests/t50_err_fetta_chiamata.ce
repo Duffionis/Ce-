@@ -1,0 +1,9 @@
+//! dati locali
+funzione prima(x: [i32]) -> [i32] {
+    ritorna x[0..1];
+}
+funzione g() -> [i32] {
+    variabile a: [i32; 2] = [1, 2];
+    ritorna prima(a[0..2]);
+}
+funzione principale() -> i32 { ritorna 0; }

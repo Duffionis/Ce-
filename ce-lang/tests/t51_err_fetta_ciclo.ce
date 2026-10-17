@@ -1,0 +1,9 @@
+//! sopravvivrebbe
+funzione principale() -> i32 {
+    variabile v: [i32];
+    per i in 0..3 {
+        variabile a: [i32; 1] = [1];
+        v = a[0..1];
+    }
+    ritorna 0;
+}

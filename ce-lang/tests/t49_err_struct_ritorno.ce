@@ -1,0 +1,7 @@
+//! dati locali
+struttura S { f: [i32] }
+funzione crea() -> S {
+    variabile a: [i32; 2] = [1, 2];
+    ritorna S { f: a[0..1] };
+}
+funzione principale() -> i32 { ritorna 0; }

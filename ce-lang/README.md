@@ -53,7 +53,10 @@ Built-ins: `stampa(...)` (with newline), `scrivi(...)`, `panico("msg")`,
 - Every code path of a non-void function must return.
 - Raw pointers (`&`, `*`) and calling C functions (`esterna`) only work
   inside a `rischio { }` block.
-- A function cannot return a slice that might point to its local data.
+- Slices cannot outlive the data they point to. Every slice (also inside a
+  struct) remembers the block its data lives in: assigning it to something
+  that lives longer is an error, and a function can only return slices (or
+  structs holding slices) that point to its parameters or to string literals.
 
 ## Modules
 
@@ -84,8 +87,8 @@ Rules:
 
 ## Known limits (v0.1, be honest about them)
 
-- Dangling slices are only partly prevented (struct fields holding slices,
-  or assigning an inner-scope array to an outer slice, are not tracked yet).
+- Slice lifetime checking is by block level and conservative: it may reject
+  some code that would be safe, and it does not follow raw pointers (`rischio`).
 - Modules are flat (one shared namespace, no `pubblico`/private yet), no
   generics, no heap allocation API (use C's malloc through `esterna` +
   `rischio` for now).

@@ -55,10 +55,13 @@ class E:
 
 
 class Var:
-    __slots__ = ("c", "t", "mut")
+    # depth: livello di blocco in cui e' dichiarata la variabile.
+    # org: per i tipi che contengono fette, il livello di blocco piu' interno
+    #      dei dati a cui puo' puntare (0 = dati del chiamante o stringhe letterali).
+    __slots__ = ("c", "t", "mut", "depth", "org")
 
-    def __init__(s, c, t, mut):
-        s.c, s.t, s.mut = c, t, mut
+    def __init__(s, c, t, mut, depth, org=0):
+        s.c, s.t, s.mut, s.depth, s.org = c, t, mut, depth, org
 
 
 # ---------- analisi dei percorsi di ritorno ----------
@@ -168,7 +171,6 @@ class Gen:
         s.n = 0
         s.risk = s.loops = 0
         s.ret = VOID
-        s.slice_params = set()
         s.L, s.glob_lines, s.proto, s.corpi = [], [], [], []
         s.ctype(TESTO)
 
@@ -255,12 +257,12 @@ class Gen:
                 return sc[name]
         s.err(f"nome sconosciuto '{name}'", line)
 
-    def declare(s, name, t, mut, line):
+    def declare(s, name, t, mut, line, org=0):
         for sc in s.scopes:
             if name in sc:
                 s.err(f"'{name}' esiste gia': in Ce++ i nomi non si possono nascondere", line)
         c = "v_" + s.cid(name)
-        s.scopes[-1][name] = Var(c, t, mut)
+        s.scopes[-1][name] = Var(c, t, mut, len(s.scopes), org)
         return c
 
     def const_int(s, n):
@@ -291,6 +293,74 @@ class Gen:
         if n.k == "bin":
             return s.pure(n.l) and s.pure(n.r)
         return False
+
+    # ----- durata dei dati a cui puntano le fette -----
+    # Ogni blocco ha un livello (len(s.scopes)); i dati di una variabile vivono
+    # fino alla fine del suo blocco. Una fetta e' valida solo se i dati a cui
+    # punta vivono almeno quanto chi la tiene. Livello 0 = parametri e stringhe.
+    def holds(s, t, seen=()):
+        if t[0] == "s":
+            return True
+        if t[0] == "a":
+            return s.holds(t[1], seen)
+        if t[0] == "st" and t[1] not in seen:
+            return any(s.holds(ft, seen + (t[1],)) for _, ft in s.structs[t[1]])
+        return False
+
+    def borrow(s, n):
+        """Livello dei dati a cui puntera' 'n' se diventa (o e') una fetta."""
+        if n.T[0] == "a":
+            d = s.rootdepth(n)
+            return max(d, s.org(n)) if s.holds(n.T) else d
+        return s.org(n) if s.holds(n.T) else 0
+
+    def rootdepth(s, n):
+        k = n.k
+        if k == "id":
+            return s.lookup(n.name, n.line).depth
+        if k in ("field", "idx"):
+            if n.e.T[0] == "s":
+                return s.org(n.e)
+            return s.rootdepth(n.e)
+        if k == "un":
+            return 0          # attraverso un puntatore grezzo: territorio 'rischio'
+        return len(s.scopes)  # temporaneo di questo blocco
+
+    def org(s, n):
+        k = n.k
+        if k == "str":
+            return 0
+        if k == "id":
+            return s.lookup(n.name, n.line).org
+        if k in ("field", "idx"):
+            return s.org(n.e) if s.holds(n.e.T) else 0
+        if k == "subs":
+            return s.borrow(n.e)
+        if k == "call":
+            return max([s.borrow(a) for a in n.args if a.T[0] in ("a", "s", "st")
+                        and (a.T[0] == "a" or s.holds(a.T))] or [0])
+        if k == "slit":
+            return max([s.borrow(f.e) for f in n.fields if f.e.T[0] in ("a", "s", "st")
+                        and (f.e.T[0] == "a" or s.holds(f.e.T))] or [0])
+        if k in ("arr", "rep"):
+            el = n.elems if k == "arr" else [n.v]
+            return max([s.borrow(x) for x in el if x.T[0] in ("a", "s", "st")
+                        and (x.T[0] == "a" or s.holds(x.T))] or [0])
+        return 0
+
+    def holder(s, n):
+        """(livello dei dati dove vive il bersaglio, variabile radice) di un'assegnazione."""
+        k = n.k
+        if k == "id":
+            v = s.lookup(n.name, n.line)
+            return v.depth, v
+        if k == "field":
+            return s.holder(n.e)
+        if k == "idx":
+            if n.e.T[0] == "s":
+                return s.org(n.e), None
+            return s.holder(n.e)
+        return None, None
 
     # ----- espressioni -----
     def ex(s, n, hint=None):
@@ -705,7 +775,8 @@ class Gen:
                 s.err("questo valore non ha un tipo (vuoto)", n.line)
         else:
             t, code = n.ty, s.coerce(n.init, n.ty, True)
-        cv = s.declare(n.name, t, n.mut, n.line)
+        org = s.borrow(n.init) if (n.init is not None and s.holds(t)) else 0
+        cv = s.declare(n.name, t, n.mut, n.line, org)
         s.put(ind, f"{s.ctype(t)} {cv} = {code};")
 
     def st_if(s, n, ind):
@@ -747,7 +818,7 @@ class Gen:
         code, st = s.as_slice(e, n.e, True)
         u = s.uid()
         s.scopes.append({})
-        cv = s.declare(n.v, st[1], False, n.line)
+        cv = s.declare(n.v, st[1], False, n.line, s.borrow(n.e) if s.holds(st[1]) else 0)
         s.put(ind, "{")
         s.put(ind + 1, f"{s.ctype(st)} _s{u} = {code};")
         s.put(ind + 1, f"for (size_t _k{u} = 0; _k{u} < _s{u}.len; _k{u}++) {{")
@@ -758,15 +829,6 @@ class Gen:
         s.put(ind + 1, "}")
         s.put(ind, "}")
         s.scopes.pop()
-
-    def slice_ret_ok(s, n):
-        if n.k == "str":
-            return True
-        if n.k == "id":
-            return n.name in s.slice_params
-        if n.k == "subs":
-            return s.slice_ret_ok(n.e)
-        return False
 
     def st_ret(s, n, ind):
         if n.e is None:
@@ -784,8 +846,8 @@ class Gen:
         if s.ret == VOID:
             s.err("questa funzione non ritorna valori", n.line)
         code = s.coerce(n.e, s.ret, False)
-        if s.ret[0] == "s" and not s.slice_ret_ok(n.e):
-            s.err("una fetta ritornata potrebbe puntare a dati locali: ritorna un "
+        if s.holds(s.ret) and s.borrow(n.e) > 0:
+            s.err("il valore ritornato potrebbe puntare a dati locali: ritorna un "
                   "parametro-fetta, una sua sotto-fetta o una stringa letterale", n.line)
         pend = s.uscita(False)
         if pend:
@@ -852,6 +914,14 @@ class Gen:
         s.check_mut(n.t)
         if n.op == "=":
             v = s.coerce(n.v, t.t, False)
+            if s.holds(t.t):
+                o = s.borrow(n.v)
+                hd, root = s.holder(n.t)
+                if hd is not None and o > hd:
+                    s.err("la fetta sopravvivrebbe ai dati a cui punta (dichiarati in un "
+                          "blocco piu' interno): i dati devono vivere almeno quanto la fetta", n.line)
+                if root is not None:
+                    root.org = max(root.org, o)
         else:
             if not s.pure(n.t):
                 s.err("in '+=', '-=', ... la parte sinistra non puo' contenere chiamate", n.line)
@@ -922,14 +992,11 @@ class Gen:
     def gen_fn(s, f):
         params, ret, _ = s.funcs[f.name]
         s.ret, s.loops, s.risk = ret, 0, 0
-        s.slice_params = set()
         s.scopes.append({})
         plist = []
         for pn, pt in params:
             cv = s.declare(pn, pt, False, f.line)
             plist.append(f"{s.ctype(pt)} {cv}")
-            if pt[0] == "s":
-                s.slice_params.add(pn)
         s.L = [f'#line {f.line} "{s.cfile}"',
                f"static {s.ctype(ret)} f_{s.cid(f.name)}({', '.join(plist) or 'void'}) {{"]
         s.scopes.append({})
