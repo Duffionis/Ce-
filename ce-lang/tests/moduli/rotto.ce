@@ -1,0 +1,2 @@
+funzione ok() -> i32 { ritorna 1; }
+funzione male() -> i32 { ritorna vero; }

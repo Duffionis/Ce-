@@ -10,7 +10,8 @@ import subprocess
 import sys
 import tempfile
 from lessico import ErroreCe, lessico, VERSIONE
-from sintassi import analizza, mostra
+from sintassi import mostra
+from modulo import carica_programma
 from genera import genera
 
 FLAG = ["-std=gnu11", "-O2", "-fwrapv", "-fno-strict-aliasing",
@@ -24,7 +25,7 @@ def carica(path):
 
 
 def a_c(path):
-    return genera(analizza(lessico(carica(path))), path)
+    return genera(carica_programma(path), path)
 
 
 def cerca_cc():
@@ -75,7 +76,7 @@ def main(argv):
             for t in lessico(carica(path)):
                 print(t)
         elif cmd == "ast":
-            mostra(analizza(lessico(carica(path))))
+            mostra(carica_programma(path))
         elif cmd == "emit":
             sys.stdout.write(a_c(path))
         elif cmd == "build":
@@ -93,7 +94,7 @@ def main(argv):
             finally:
                 shutil.rmtree(tmp, ignore_errors=True)
     except ErroreCe as e:
-        print(f"{path}:{e.riga}: errore: {e.msg}", file=sys.stderr)
+        print(f"{e.file or path}:{e.riga}: errore: {e.msg}", file=sys.stderr)
         return 1
     return 0
 

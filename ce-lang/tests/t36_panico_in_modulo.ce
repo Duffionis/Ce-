@@ -1,0 +1,6 @@
+//# moduli/panica.ce:2
+usa "moduli/panica.ce";
+funzione principale() -> i32 {
+    stampa(dividi(1, 0));
+    ritorna 0;
+}

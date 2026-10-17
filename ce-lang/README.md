@@ -28,7 +28,7 @@ AddressSanitizer + UBSan (useful once you use `rischio`).
 ## The language
 
 Keywords: `funzione struttura variabile costante se altrimenti mentre per in
-ritorna interrompi continua vero falso rischio esterna come`.
+ritorna interrompi continua vero falso rischio esterna come usa`.
 English keywords (`if`, `while`, `return`, ...) are rejected with a hint
 ("'if' e' inglese: in Ce++ si scrive 'se'").
 
@@ -55,12 +55,22 @@ Built-ins: `stampa(...)` (with newline), `scrivi(...)`, `panico("msg")`,
   inside a `rischio { }` block.
 - A function cannot return a slice that might point to its local data.
 
+## Modules
+
+    usa "geometria.ce";      // at the top level, path relative to this file
+
+Each file is loaded once (diamond imports are fine), imports can nest, and
+circular imports are an error. All modules share one namespace: two files
+defining the same name is an error (no shadowing, as everywhere in Ce++).
+Errors and `panico` messages name the file and line of the module they come from.
+
 ## Known limits (v0.1, be honest about them)
 
 - Dangling slices are only partly prevented (struct fields holding slices,
   or assigning an inner-scope array to an outer slice, are not tracked yet).
-- One file per program, no modules, no generics, no heap allocation API
-  (use C's malloc through `esterna` + `rischio` for now).
+- Modules are flat (one shared namespace, no `pubblico`/private yet), no
+  generics, no heap allocation API (use C's malloc through `esterna` +
+  `rischio` for now).
 - Global values can only be numeric/boolean constants.
 - The compiler reports the first error only.
 - External C functions use asm labels: tested on Linux.
@@ -75,6 +85,6 @@ Built-ins: `stampa(...)` (with newline), `scrivi(...)`, `panico("msg")`,
 
 ## Ideas for later
 
-Modules, `rimanda` (defer), option/result types, an allocator API, real
+Private names / `pubblico`, `rimanda` (defer), option/result types, an allocator API, real
 lifetime checking for slices, packed structs and bit fields (emulator work),
 a direct backend instead of C.

@@ -1,0 +1,3 @@
+//! dopo 'usa' ci vuole il nome di un file
+usa geometria;
+funzione principale() -> i32 { ritorna 0; }

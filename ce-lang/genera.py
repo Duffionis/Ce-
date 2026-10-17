@@ -100,37 +100,42 @@ RUNTIME = r'''/* generato da Ce++ */
 #include <stdlib.h>
 #define CE_NORET __attribute__((noreturn))
 #define CE_UNUSED __attribute__((unused))
-#define CE_FILE "@FILE@"
-static CE_NORET CE_UNUSED void ce_panic_idx(size_t i, size_t n, long line) {
+static CE_NORET CE_UNUSED void ce_panic_idx_(size_t i, size_t n, long line, const char* CE_FILE) {
     fflush(stdout);
     fprintf(stderr, "panico: indice %zu fuori dai limiti (lunghezza %zu) [%s:%ld]\n", i, n, CE_FILE, line);
     exit(101);
 }
-static CE_NORET CE_UNUSED void ce_panic_sub(size_t lo, size_t hi, size_t n, long line) {
+static CE_NORET CE_UNUSED void ce_panic_sub_(size_t lo, size_t hi, size_t n, long line, const char* CE_FILE) {
     fflush(stdout);
     fprintf(stderr, "panico: fetta %zu..%zu non valida (lunghezza %zu) [%s:%ld]\n", lo, hi, n, CE_FILE, line);
     exit(101);
 }
-static CE_NORET CE_UNUSED void ce_panic_div(long line) {
+static CE_NORET CE_UNUSED void ce_panic_div_(long line, const char* CE_FILE) {
     fflush(stdout);
     fprintf(stderr, "panico: divisione per zero [%s:%ld]\n", CE_FILE, line);
     exit(101);
 }
-static CE_NORET CE_UNUSED void ce_panic_shift(long line) {
+static CE_NORET CE_UNUSED void ce_panic_shift_(long line, const char* CE_FILE) {
     fflush(stdout);
     fprintf(stderr, "panico: scorrimento oltre la larghezza del tipo [%s:%ld]\n", CE_FILE, line);
     exit(101);
 }
-static CE_NORET CE_UNUSED void ce_panic_lit(const char* m, long line) {
+static CE_NORET CE_UNUSED void ce_panic_lit_(const char* m, long line, const char* CE_FILE) {
     fflush(stdout);
     fprintf(stderr, "panico: %s [%s:%ld]\n", m, CE_FILE, line);
     exit(101);
 }
-static CE_NORET CE_UNUSED void ce_panic_msg(const uint8_t* p, size_t n, long line) {
+static CE_NORET CE_UNUSED void ce_panic_msg_(const uint8_t* p, size_t n, long line, const char* CE_FILE) {
     fflush(stdout);
     fprintf(stderr, "panico: %.*s [%s:%ld]\n", (int)n, (const char*)p, CE_FILE, line);
     exit(101);
 }
+#define ce_panic_idx(...) ce_panic_idx_(__VA_ARGS__, __FILE__)
+#define ce_panic_sub(...) ce_panic_sub_(__VA_ARGS__, __FILE__)
+#define ce_panic_div(...) ce_panic_div_(__VA_ARGS__, __FILE__)
+#define ce_panic_shift(...) ce_panic_shift_(__VA_ARGS__, __FILE__)
+#define ce_panic_lit(...) ce_panic_lit_(__VA_ARGS__, __FILE__)
+#define ce_panic_msg(...) ce_panic_msg_(__VA_ARGS__, __FILE__)
 '''
 
 PRINTERS = r'''
@@ -143,10 +148,19 @@ static CE_UNUSED void ce_nl(void) { putchar('\n'); }
 '''
 
 
+class _Nessuno:
+    file = None
+
+
+N0 = _Nessuno()
+
+
 class Gen:
     def __init__(s, fname):
         s.fname = fname
-        s.cfile = fname.replace("\\", "\\\\").replace('"', '\\"')
+        s.main = fname
+        s.cur = None   # file del nodo in lavorazione (None = file principale)
+        s.cfile = s.cesc(fname)
         s.structs, s.defined, s.funcs, s.cvals = {}, set(), {}, {}
         s.tdecl, s.tdone = [], set()
         s.scopes = [{}]
@@ -158,8 +172,17 @@ class Gen:
         s.ctype(TESTO)
 
     # ----- utilita' -----
+    @staticmethod
+    def cesc(p):
+        return p.replace("\\", "\\\\").replace('"', '\\"')
+
+    def entra(s, it):
+        """Da qui in poi gli errori e le righe #line riguardano il file di 'it'."""
+        s.cur = getattr(it, "file", None)
+        s.cfile = s.cesc(s.cur or s.main)
+
     def err(s, msg, line):
-        raise ErroreCe(msg, line)
+        raise ErroreCe(msg, line, s.cur)
 
     def uid(s):
         s.n += 1
@@ -851,26 +874,32 @@ class Gen:
     def programma(s, items):
         for it in items:
             if it.k == "struct":
+                s.entra(it)
                 if it.name in s.structs:
                     s.err(f"la struttura '{it.name}' e' gia' definita", it.line)
                 s.structs[it.name] = []
         for it in items:
             if it.k == "struct":
+                s.entra(it)
                 s.def_struct(it)
         for it in items:
             if it.k == "fn":
+                s.entra(it)
                 s.reg_fn(it)
         for it in items:
             if it.k == "var":
+                s.entra(it)
                 s.glob_const(it)
         for it in items:
             if it.k == "fn" and not it.extern:
+                s.entra(it)
                 s.gen_fn(it)
+        s.entra(N0)
         if "principale" not in s.funcs or s.funcs["principale"][2]:
             s.err("manca la funzione 'principale'", 1)
 
     def salida(s):
-        out = [RUNTIME.replace("@FILE@", s.cfile)]
+        out = [RUNTIME]
         out += [f"typedef struct S_{s.cid(n)} S_{s.cid(n)};" for n in s.structs]
         out += s.tdecl
         out.append(PRINTERS)

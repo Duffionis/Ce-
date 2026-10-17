@@ -111,6 +111,13 @@ class Parser:
 
     def item(s):
         ln = s.tok[2]
+        if s.acc("usa"):
+            t = s.tok
+            if t[0] != "str":
+                s.e(f"dopo 'usa' ci vuole il nome di un file tra virgolette, trovato {s.desc()}")
+            s.i += 1
+            s.exp(";")
+            return N("usa", ln, path=t[1].decode("utf-8", "replace"))
         if s.acc("esterna"):
             s.exp("funzione")
             f = s.firma(ln)
@@ -126,7 +133,7 @@ class Parser:
             return s.struttura(ln)
         if s.is_("costante"):
             return s.vardecl(True)
-        s.e(f"atteso 'funzione', 'struttura' o 'costante', trovato {s.desc()}")
+        s.e(f"atteso 'funzione', 'struttura', 'costante' o 'usa', trovato {s.desc()}")
 
     def firma(s, ln):
         nome = s.ident()

@@ -1,0 +1,3 @@
+//! moduli/rotto.ce:2: errore
+usa "moduli/rotto.ce";
+funzione principale() -> i32 { ritorna 0; }

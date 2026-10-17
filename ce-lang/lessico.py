@@ -8,16 +8,16 @@ VERSIONE = "0.1.0"
 
 
 class ErroreCe(Exception):
-    def __init__(self, msg, riga=0):
+    def __init__(self, msg, riga=0, file=None):
         super().__init__(msg)
-        self.msg, self.riga = msg, riga
+        self.msg, self.riga, self.file = msg, riga, file
 
 
 # ===== LESSICO: qui vivono tutte le parole del linguaggio =====
 PAROLE_CHIAVE = {
     "funzione", "struttura", "variabile", "costante", "se", "altrimenti",
     "mentre", "per", "in", "ritorna", "interrompi", "continua",
-    "vero", "falso", "rischio", "esterna", "come",
+    "vero", "falso", "rischio", "esterna", "come", "usa",
 }
 
 # Parole inglesi vietate: danno un errore che spiega come si scrive in Ce++.

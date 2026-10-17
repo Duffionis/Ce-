@@ -1,0 +1,13 @@
+//> 7
+//> 107
+//> 100
+usa "moduli/geometria.ce";
+usa "moduli/testi.ce";
+usa "moduli/comune.ce";
+funzione principale() -> i32 {
+    variabile p: Punto = Punto { x: 3, y: 4 };
+    stampa(manhattan(p));
+    stampa(piu_base(7));
+    stampa(BASE);
+    ritorna 0;
+}

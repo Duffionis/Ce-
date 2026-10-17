@@ -1,0 +1,3 @@
+//! dipendenza circolare tra moduli
+usa "moduli/circ_a.ce";
+funzione principale() -> i32 { ritorna 0; }
