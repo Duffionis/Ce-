@@ -1,0 +1,8 @@
+//! nell'istanza male con T = i32
+funzione male<T>(a: T) -> T {
+    ritorna a + vero;
+}
+funzione principale() -> i32 {
+    stampa(male(1));
+    ritorna 0;
+}

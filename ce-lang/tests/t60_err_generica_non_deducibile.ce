@@ -1,0 +1,8 @@
+//! non riesco a capire il tipo generico 'T'
+funzione crea<T>(n: usize) -> [T] {
+    ritorna riserva(T, n);
+}
+funzione principale() -> i32 {
+    variabile v: [i32] = crea(3);
+    ritorna 0;
+}

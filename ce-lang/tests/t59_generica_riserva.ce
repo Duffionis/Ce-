@@ -1,0 +1,17 @@
+//> 20
+//> 3
+funzione copia<T>(v: [T]) -> [T] {
+    variabile c: [T] = riserva(T, v.lunghezza);
+    per i in 0..v.lunghezza {
+        c[i] = v[i];
+    }
+    ritorna c;
+}
+funzione principale() -> i32 {
+    variabile a: [i32; 3] = [10, 20, 30];
+    variabile c: [i32] = copia(a);
+    rimanda { rischio { libera(c); } }
+    stampa(c[1]);
+    stampa(c.lunghezza);
+    ritorna 0;
+}

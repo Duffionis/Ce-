@@ -121,6 +121,8 @@ class Parser:
         if s.acc("esterna"):
             s.exp("funzione")
             f = s.firma(ln)
+            if f.tparams:
+                s.e("una funzione 'esterna' (C) non puo' essere generica")
             f.extern, f.body = True, None
             s.exp(";")
             return f
@@ -137,6 +139,13 @@ class Parser:
 
     def firma(s, ln):
         nome = s.ident()
+        tps = []
+        if s.acc("<"):
+            while True:
+                tps.append(s.ident())
+                if not s.acc(","):
+                    break
+            s.exp(">")
         s.exp("(")
         params = []
         while not s.is_(")"):
@@ -150,7 +159,7 @@ class Parser:
         ret = ("p", "void")
         if s.acc("->"):
             ret = s.tipo()
-        return N("fn", ln, name=nome, params=params, ret=ret)
+        return N("fn", ln, name=nome, params=params, ret=ret, tparams=tps)
 
     def struttura(s, ln):
         nome = s.ident()

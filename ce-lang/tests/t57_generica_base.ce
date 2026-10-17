@@ -1,0 +1,24 @@
+//> 7
+//> 2.5
+//> 9
+//> 60
+funzione massimo<T>(a: T, b: T) -> T {
+    se a > b { ritorna a; }
+    ritorna b;
+}
+funzione somma_tutti<T>(v: [T]) -> T {
+    variabile s: T = v[0];
+    per i in 1..v.lunghezza {
+        s += v[i];
+    }
+    ritorna s;
+}
+funzione principale() -> i32 {
+    stampa(massimo(3, 7));
+    stampa(massimo(2.5, 1.5));
+    variabile x: i64 = 9;
+    stampa(massimo(x, 7));
+    variabile a: [i32; 3] = [10, 20, 30];
+    stampa(somma_tutti(a));
+    ritorna 0;
+}

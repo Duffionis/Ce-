@@ -96,6 +96,26 @@ Rules:
   and cannot contain another `rimanda`.
 - `panico` stops the program immediately (exit 101) and does not run them.
 
+## Generic functions
+
+    funzione massimo<T>(a: T, b: T) -> T {
+        se a > b { ritorna a; }
+        ritorna b;
+    }
+    stampa(massimo(3, 7));        // T = i32
+    stampa(massimo(x, 7));        // x: i64 -> T = i64
+
+Write the function once, use it for any type. The compiler works out `T` from
+the arguments (typed values first, then number literals, which take the type
+already found) and generates one real function per type, so there is no
+runtime cost. `T` can also be used inside the body (`variabile s: T`,
+`riserva(T, n)`). Errors inside an instance say which types caused them.
+
+- A generic function is only checked when it is used: an unused one is not
+  type-checked.
+- `T` must be deducible from the arguments (no explicit `massimo<i32>(...)` yet).
+- Generic structs (needed for a ready-made vector) come next.
+
 ## Known limits (v0.1, be honest about them)
 
 - Slice lifetime checking is by block level and conservative: it may reject
@@ -103,7 +123,7 @@ Rules:
 - Heap memory is manual: forgetting `libera` leaks, and using a copy of a slice
   after `libera` is not caught. `riserva` takes only a plain type name.
 - Modules are flat (one shared namespace, no `pubblico`/private yet) and there
-  are no generics, so no ready-made vector or map yet.
+  are no generic structs yet, so no ready-made vector or map.
 - Global values can only be numeric/boolean constants.
 - The compiler reports the first error only.
 - External C functions use asm labels: tested on Linux.
@@ -118,5 +138,5 @@ Rules:
 
 ## Ideas for later
 
-Private names / `pubblico`, option/result types, generics (vector, map), packed structs and bit fields (emulator work),
+Private names / `pubblico`, option/result types, generic structs (vector, map), packed structs and bit fields (emulator work),
 a direct backend instead of C.

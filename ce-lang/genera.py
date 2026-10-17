@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Ce++: controllo dei tipi e generazione del C."""
+import copy
 from lessico import ErroreCe
 from sintassi import N, TESTO, PRIMS, ALIAS_TIPI
 
@@ -44,6 +45,63 @@ def tstr(t):
     if k == "s":
         return "[" + tstr(t[1]) + "]"
     return f"[{tstr(t[1])}; {t[2]}]"
+
+
+def es_tipo(x):
+    k = x[0] if x else None
+    if k in ("p", "st"):
+        return len(x) == 2 and isinstance(x[1], str)
+    if k in ("s", "ptr"):
+        return len(x) == 2 and isinstance(x[1], tuple) and es_tipo(x[1])
+    if k == "a":
+        return len(x) == 3 and isinstance(x[1], tuple) and es_tipo(x[1]) and isinstance(x[2], int)
+    return False
+
+
+def sost(t, b):
+    """Sostituisce i parametri di tipo (nomi in b) dentro il tipo t."""
+    k = t[0]
+    if k == "st":
+        return b.get(t[1], t)
+    if k == "p":
+        return t
+    if k in ("s", "ptr"):
+        return (k, sost(t[1], b))
+    return ("a", sost(t[1], b), t[2])
+
+
+def ha_param(t, tps):
+    k = t[0]
+    if k == "st":
+        return t[1] in tps
+    if k == "p":
+        return False
+    return ha_param(t[1], tps)
+
+
+def nome_di(t):
+    if t == TESTO:
+        return "testo"
+    return t[1] if t[0] in ("p", "st") else None
+
+
+def riscrivi(x, b):
+    """Copia di un albero con i parametri di tipo sostituiti dai tipi veri."""
+    if isinstance(x, N):
+        y = copy.copy(x)
+        for k, v in x.__dict__.items():
+            if k not in ("k", "line", "file"):
+                setattr(y, k, riscrivi(v, b))
+        if x.k == "id" and x.name in b and nome_di(b[x.name]):
+            y.name = nome_di(b[x.name])
+        return y
+    if isinstance(x, list):
+        return [riscrivi(v, b) for v in x]
+    if isinstance(x, tuple):
+        if x and isinstance(x[0], str) and es_tipo(x):
+            return sost(x, b)
+        return tuple(riscrivi(v, b) for v in x)
+    return x
 
 
 class E:
@@ -167,6 +225,9 @@ class Gen:
     def __init__(s, fname):
         s.fname = fname
         s.main = fname
+        s.generics = {}   # nome -> funzione generica (nodo)
+        s.pending = []    # istanze generiche da generare
+        s.ninst = 0
         s.dframes = []   # un blocco per ogni '{': codice C dei 'rimanda' in attesa
         s.cur = None   # file del nodo in lavorazione (None = file principale)
         s.cfile = s.cesc(fname)
@@ -730,6 +791,8 @@ class Gen:
                 s.err("'libera' vuole il nome di una variabile di tipo fetta", n.line)
             s.check_mut(n.args[0])
             return E(f"({{ free((void*)({a.c}).ptr); {a.c} = ({s.ctype(a.t)}){{0}}; }})", VOID)
+        if nm in s.generics:
+            nm = n.name = s.istanzia(n)
         if nm not in s.funcs:
             s.err(f"funzione sconosciuta '{nm}'", n.line)
         params, ret, ext = s.funcs[nm]
@@ -995,6 +1058,57 @@ class Gen:
         s.defined.add(it.name)
         s.tdecl.append(f"struct S_{s.cid(it.name)} {{ {' '.join(parts)} }};")
 
+    def reg_generic(s, f):
+        if f.name in s.funcs or f.name in s.generics or f.name in BUILTIN:
+            s.err(f"la funzione '{f.name}' e' gia' definita", f.line)
+        if f.name == "principale":
+            s.err("'principale' non puo' essere generica", f.line)
+        for i, tp in enumerate(f.tparams):
+            if tp in f.tparams[:i]:
+                s.err(f"il parametro di tipo '{tp}' e' ripetuto", f.line)
+            if tp in s.structs or tp in PRIMS or tp in ALIAS_TIPI or tp == "testo":
+                s.err(f"'{tp}' e' gia' un tipo: scegli un altro nome per il parametro", f.line)
+        s.generics[f.name] = f
+
+    def unifica(s, pt, at, tps, b, line):
+        if pt[0] == "st" and pt[1] in tps:
+            old = b.get(pt[1])
+            if old is None:
+                b[pt[1]] = at
+            elif old != at:
+                s.err(f"il tipo generico '{pt[1]}' vale sia {tstr(old)} sia {tstr(at)}", line)
+        elif pt[0] in ("s", "ptr", "a") and at[0] in ("s", "ptr", "a"):
+            s.unifica(pt[1], at[1], tps, b, line)
+
+    def istanzia(s, n):
+        """Chiamata a funzione generica: capisce i tipi dagli argomenti e ritorna il nome dell'istanza."""
+        g = s.generics[n.name]
+        if len(n.args) != len(g.params):
+            s.err(f"'{n.name}' vuole {len(g.params)} argomenti, ne ha ricevuti {len(n.args)}", n.line)
+        tps, b = g.tparams, {}
+        ordine = [i for i, a in enumerate(n.args) if not s.is_lit(a)]
+        ordine += [i for i, a in enumerate(n.args) if s.is_lit(a)]
+        for i in ordine:
+            pt = g.params[i].ty
+            pronto = sost(pt, b)
+            hint = None if ha_param(pronto, tps) else pronto
+            e = s.ex(n.args[i], hint)
+            s.unifica(pt, e.t, tps, b, n.line)
+        for tp in tps:
+            if tp not in b:
+                s.err(f"non riesco a capire il tipo generico '{tp}' dagli argomenti di '{n.name}'", n.line)
+        nome = n.name + "__" + "_".join(s.mangle(b[tp]) for tp in tps)
+        if nome not in s.funcs:
+            s.ninst += 1
+            if s.ninst > 200:
+                s.err("troppe istanze di funzioni generiche (ricorsione infinita sui tipi?)", n.line)
+            inst = riscrivi(g, b)
+            inst.name, inst.tparams, inst.file = nome, [], getattr(g, "file", None)
+            inst.desc = f"{g.name} con " + ", ".join(f"{tp} = {tstr(b[tp])}" for tp in tps)
+            s.reg_fn(inst)
+            s.pending.append(inst)
+        return nome
+
     def reg_fn(s, f):
         if f.name in s.funcs or f.name in BUILTIN:
             s.err(f"la funzione '{f.name}' e' gia' definita", f.line)
@@ -1065,15 +1179,27 @@ class Gen:
         for it in items:
             if it.k == "fn":
                 s.entra(it)
-                s.reg_fn(it)
+                if it.tparams:
+                    s.reg_generic(it)
+                else:
+                    s.reg_fn(it)
         for it in items:
             if it.k == "var":
                 s.entra(it)
                 s.glob_const(it)
         for it in items:
-            if it.k == "fn" and not it.extern:
+            if it.k == "fn" and not it.extern and not it.tparams:
                 s.entra(it)
                 s.gen_fn(it)
+        while s.pending:
+            f = s.pending.pop(0)
+            s.entra(f)
+            try:
+                s.gen_fn(f)
+            except ErroreCe as e:
+                if " (nell'istanza " not in e.msg:
+                    e.msg += f" (nell'istanza {f.desc})"
+                raise
         s.entra(N0)
         if "principale" not in s.funcs or s.funcs["principale"][2]:
             s.err("manca la funzione 'principale'", 1)
