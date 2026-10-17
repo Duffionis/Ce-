@@ -1,0 +1,6 @@
+//! rischio
+funzione principale() -> i32 {
+    variabile a: i32 = 1;
+    variabile p = &a;
+    ritorna 0;
+}

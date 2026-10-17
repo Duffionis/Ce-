@@ -1,0 +1,12 @@
+funzione principale() -> i32 {
+    variabile x: i32;
+    stampa("x = ", x);
+    variabile grande: i32 = 2147483647;
+    grande += 1;
+    stampa("overflow: ", grande);
+    variabile v: [i32; 3] = [10, 20, 30];
+    variabile i: i32 = 7;
+    stampa("sto per leggere v[7]...");
+    stampa(v[i]);
+    ritorna 0;
+}

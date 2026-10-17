@@ -1,0 +1,6 @@
+//> dal C
+esterna funzione puts(s: *carattere) -> i32;
+funzione principale() -> i32 {
+    rischio { puts("dal C" come *carattere); }
+    ritorna 0;
+}

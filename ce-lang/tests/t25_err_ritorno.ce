@@ -1,0 +1,4 @@
+//! non ritorna
+funzione principale() -> i32 {
+    variabile a: i32 = 1;
+}

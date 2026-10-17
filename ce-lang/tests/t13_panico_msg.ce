@@ -1,0 +1,5 @@
+//# boom
+funzione principale() -> i32 {
+    panico("boom");
+    ritorna 0;
+}

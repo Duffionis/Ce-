@@ -1,0 +1,5 @@
+{
+  "name": "Ce++",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y gcc clang python3 && cd ce-lang && python3 tests/esegui.py"
+}

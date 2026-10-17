@@ -1,0 +1,26 @@
+costante N: i32 = 4;
+
+struttura Punto { x: i32, y: i32 }
+
+esterna funzione puts(s: *carattere) -> i32;
+
+funzione somma_tutti(v: [i32]) -> i32 {
+    variabile tot: i32 = 0;
+    per x in v { tot += x; }
+    ritorna tot;
+}
+
+funzione principale() -> i32 {
+    variabile a: [i32; N] = [1, 2, 3, 4];
+    variabile p = Punto { x: 1, y: -2 };
+    se p.x < 2 && a[0] == 1 {
+        stampa("ok ", somma_tutti(a[1..3]));
+    } altrimenti se vero {
+        stampa("altro");
+    } altrimenti {
+        ritorna 1;
+    }
+    mentre p.y < 0 { p.y += 1; interrompi; }
+    rischio { puts("ciao" come *carattere); }
+    ritorna (a[0] come i64 + 1) come i32;
+}

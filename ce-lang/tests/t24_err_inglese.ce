@@ -1,0 +1,5 @@
+//! e' inglese
+funzione principale() -> i32 {
+    if (1) { }
+    ritorna 0;
+}

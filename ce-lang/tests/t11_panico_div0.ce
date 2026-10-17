@@ -1,0 +1,6 @@
+//# divisione per zero
+funzione principale() -> i32 {
+    variabile z: i32 = 0;
+    stampa(10 / z);
+    ritorna 0;
+}

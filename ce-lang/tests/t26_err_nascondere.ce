@@ -1,0 +1,6 @@
+//! esiste gia'
+funzione principale() -> i32 {
+    variabile x: i32 = 1;
+    se vero { variabile x: i32 = 2; }
+    ritorna 0;
+}

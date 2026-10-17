@@ -1,0 +1,9 @@
+//> 0 000 0 0 falso
+struttura P { x: i32, y: f64, ok: booleano }
+funzione principale() -> i32 {
+    variabile n: i32;
+    variabile a: [i32; 3];
+    variabile p: P;
+    stampa(n, " ", a[0], a[1], a[2], " ", p.x, " ", p.y, " ", p.ok);
+    ritorna 0;
+}

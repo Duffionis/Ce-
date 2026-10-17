@@ -1,0 +1,10 @@
+//> 42
+funzione principale() -> i32 {
+    variabile x: i32 = 5;
+    rischio {
+        variabile p = &x;
+        *p = 42;
+    }
+    stampa(x);
+    ritorna 0;
+}

@@ -1,0 +1,13 @@
+//> 14
+//> 3 1 -3 -1
+//> 16 63 2 7 5
+//> 3.75
+//> falso vero falso
+funzione principale() -> i32 {
+    stampa(2 + 3 * 4);
+    stampa(10 / 3, " ", 10 % 3, " ", -7 / 2, " ", -7 % 2);
+    stampa(1 << 4, " ", 255 >> 2, " ", 6 & 3, " ", 6 | 3, " ", 6 ^ 3);
+    stampa(7.5 / 2.0);
+    stampa(vero && falso, " ", vero || falso, " ", !vero);
+    ritorna 0;
+}

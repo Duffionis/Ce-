@@ -1,0 +1,8 @@
+//> 3 6 3.5
+costante N: i32 = 3;
+costante PI: f64 = 3.5;
+funzione principale() -> i32 {
+    variabile a: [i32; N] = [N, N, N];
+    stampa(a.lunghezza, " ", a[2] + N, " ", PI);
+    ritorna 0;
+}

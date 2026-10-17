@@ -1,0 +1,16 @@
+//> 15
+//> 1 2 4 5
+funzione principale() -> i32 {
+    variabile s: i32 = 0;
+    per i in 1..6 { s += i; }
+    stampa(s);
+    variabile k: i32 = 0;
+    mentre vero {
+        k += 1;
+        se k == 3 { continua; }
+        se k > 5 { interrompi; }
+        scrivi(k, " ");
+    }
+    stampa("");
+    ritorna 0;
+}

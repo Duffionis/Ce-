@@ -1,0 +1,6 @@
+//! tipi diversi
+funzione principale() -> i32 {
+    variabile a: i32 = 1;
+    variabile b: i64 = 2;
+    ritorna a + b;
+}

@@ -1,0 +1,14 @@
+// Il mio primo programma Ce++
+funzione somma(a: i32, b: i32) -> i32 {
+    ritorna a + b;
+}
+
+funzione principale() -> i32 {
+    variabile n: i32 = 0xFF;
+    per i in 0..5 {
+        stampa("ciao ", i, " pi = ", 3.14);
+    }
+    /* commento
+       su due righe */
+    ritorna somma(n, 1);
+}

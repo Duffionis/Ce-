@@ -1,0 +1,6 @@
+//! funzione C
+esterna funzione puts(s: *carattere) -> i32;
+funzione principale() -> i32 {
+    puts("x" come *carattere);
+    ritorna 0;
+}

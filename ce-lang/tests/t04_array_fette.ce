@@ -1,0 +1,25 @@
+//> 15 9 30
+//> 5 4
+//> 2 2
+//> 114
+//> 7 4
+funzione somma(v: [i32]) -> i32 {
+    variabile t: i32 = 0;
+    per x in v { t += x; }
+    ritorna t;
+}
+funzione primi(v: [i32]) -> [i32] {
+    ritorna v[0..2];
+}
+funzione principale() -> i32 {
+    variabile a: [i32; 5] = [1, 2, 3, 4, 5];
+    stampa(somma(a), " ", somma(a[1..4]), " ", somma([10, 20]));
+    stampa(a.lunghezza, " ", a[1..].lunghezza);
+    variabile r = primi(a);
+    stampa(r.lunghezza, " ", r[1]);
+    a[0] = 100;
+    stampa(somma(a));
+    variabile z: [i32; 4] = [7; 4];
+    stampa(z[3], " ", z.lunghezza);
+    ritorna 0;
+}

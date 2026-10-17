@@ -1,0 +1,15 @@
+name: test
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cc: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        working-directory: ce-lang
+        env:
+          CC: ${{ matrix.cc }}
+        run: python3 tests/esegui.py
