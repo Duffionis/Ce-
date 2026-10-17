@@ -1,0 +1,7 @@
+//> 0
+funzione principale() -> i32 {
+    variabile v: [i32] = riserva(i32, 4);
+    rischio { libera(v); }
+    stampa(v.lunghezza);
+    ritorna 0;
+}

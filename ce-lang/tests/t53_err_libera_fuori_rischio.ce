@@ -1,0 +1,6 @@
+//! usala dentro un blocco 'rischio'
+funzione principale() -> i32 {
+    variabile v: [i32] = riserva(i32, 2);
+    libera(v);
+    ritorna 0;
+}

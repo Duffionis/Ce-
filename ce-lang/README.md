@@ -39,6 +39,17 @@ bytes). Arrays are `[T; N]`, slices are `[T]`, raw pointers are `*T`.
 
 Built-ins: `stampa(...)` (with newline), `scrivi(...)`, `panico("msg")`,
 `afferma(cond, "msg")`, and `.lunghezza` on arrays and slices.
+`riserva(T, n)` allocates `n` zeroed values of type `T` on the heap and gives
+a slice (`variabile v: [i32] = riserva(i32, 10);`; it panics if memory runs
+out). `libera(v)` frees it and empties `v`; it only works inside `rischio`,
+because the compiler cannot check that the slice came from `riserva` or that
+nothing else still points to it. Pair them with `rimanda`:
+
+    variabile v: [i32] = riserva(i32, 10);
+    rimanda { rischio { libera(v); } }
+
+Heap slices can be returned from functions. Use after `libera` through a copy
+of the slice is not detected (known limit below).
 
 ## What is enforced today
 
@@ -89,9 +100,10 @@ Rules:
 
 - Slice lifetime checking is by block level and conservative: it may reject
   some code that would be safe, and it does not follow raw pointers (`rischio`).
-- Modules are flat (one shared namespace, no `pubblico`/private yet), no
-  generics, no heap allocation API (use C's malloc through `esterna` +
-  `rischio` for now).
+- Heap memory is manual: forgetting `libera` leaks, and using a copy of a slice
+  after `libera` is not caught. `riserva` takes only a plain type name.
+- Modules are flat (one shared namespace, no `pubblico`/private yet) and there
+  are no generics, so no ready-made vector or map yet.
 - Global values can only be numeric/boolean constants.
 - The compiler reports the first error only.
 - External C functions use asm labels: tested on Linux.
@@ -106,6 +118,5 @@ Rules:
 
 ## Ideas for later
 
-Private names / `pubblico`, option/result types, an allocator API, real
-lifetime checking for slices, packed structs and bit fields (emulator work),
+Private names / `pubblico`, option/result types, generics (vector, map), packed structs and bit fields (emulator work),
 a direct backend instead of C.

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Ce++: controllo dei tipi e generazione del C."""
 from lessico import ErroreCe
-from sintassi import N, TESTO
+from sintassi import N, TESTO, PRIMS, ALIAS_TIPI
 
 SIGNED = {"i8", "i16", "i32", "i64"}
 UNSIGNED = {"u8", "u16", "u32", "u64", "usize"}
@@ -26,7 +26,7 @@ RANGE = {k: ((-(1 << (BITS[k] - 1)), (1 << (BITS[k] - 1)) - 1) if k in SIGNED
 
 VOID, BOOL = ("p", "void"), ("p", "bool")
 I32, F64, USIZE = ("p", "i32"), ("p", "f64"), ("p", "usize")
-BUILTIN = ("stampa", "scrivi", "panico", "afferma")
+BUILTIN = ("stampa", "scrivi", "panico", "afferma", "riserva", "libera")
 
 
 def is_int(t):
@@ -142,6 +142,11 @@ static CE_NORET CE_UNUSED void ce_panic_msg_(const uint8_t* p, size_t n, long li
 '''
 
 PRINTERS = r'''
+static CE_UNUSED void* ce_riserva(size_t n, size_t size, long line) {
+    void* p = calloc(n ? n : 1, size);
+    if (!p) ce_panic_lit("memoria esaurita", line);
+    return n ? p : NULL;
+}
 static CE_UNUSED void ce_pi(int64_t x) { printf("%lld", (long long)x); }
 static CE_UNUSED void ce_pu(uint64_t x) { printf("%llu", (unsigned long long)x); }
 static CE_UNUSED void ce_pf(double x) { printf("%g", x); }
@@ -294,6 +299,22 @@ class Gen:
             return s.pure(n.l) and s.pure(n.r)
         return False
 
+    def nome_tipo(s, n):
+        """Il tipo scritto come argomento di 'riserva' (solo nomi: i32, intero, Punto, testo)."""
+        if n.k == "id":
+            nm = n.name
+            if nm == "testo":
+                return TESTO
+            if nm in ALIAS_TIPI:
+                nm = ALIAS_TIPI[nm]
+            if nm in PRIMS and nm not in ("void", "bool"):
+                return ("p", nm)
+            if nm == "bool":
+                return ("p", "bool")
+            if nm in s.structs:
+                return ("st", nm)
+        s.err("il primo argomento di 'riserva' deve essere il nome di un tipo (i32, intero, Punto...)", n.line)
+
     # ----- durata dei dati a cui puntano le fette -----
     # Ogni blocco ha un livello (len(s.scopes)); i dati di una variabile vivono
     # fino alla fine del suo blocco. Una fetta e' valida solo se i dati a cui
@@ -337,6 +358,8 @@ class Gen:
         if k == "subs":
             return s.borrow(n.e)
         if k == "call":
+            if n.name == "riserva":
+                return 0          # memoria dell'heap: vive finche' non la liberi
             return max([s.borrow(a) for a in n.args if a.T[0] in ("a", "s", "st")
                         and (a.T[0] == "a" or s.holds(a.T))] or [0])
         if k == "slit":
@@ -688,6 +711,25 @@ class Gen:
             m = s.coerce(n.args[1], TESTO, False)
             u = s.uid()
             return E(f"({{ ce_s_u8 _m{u} = {m}; if (!({c.c})) ce_panic_msg(_m{u}.ptr, _m{u}.len, {n.line}); }})", VOID)
+        if nm == "riserva":
+            if len(n.args) != 2:
+                s.err("'riserva' vuole un tipo e una quantita': riserva(i32, 10)", n.line)
+            t = s.nome_tipo(n.args[0])
+            st = ("s", t)
+            cnt = s.coerce(n.args[1], USIZE, False)
+            u = s.uid()
+            return E(f"({{ size_t _n{u} = (size_t)({cnt}); "
+                     f"({s.ctype(st)}){{ ({s.ctype(t)}*)ce_riserva(_n{u}, sizeof({s.ctype(t)}), {n.line}), _n{u} }}; }})", st)
+        if nm == "libera":
+            if not s.risk:
+                s.err("'libera' e' pericolosa (la fetta deve venire da 'riserva'): usala dentro un blocco 'rischio'", n.line)
+            if len(n.args) != 1:
+                s.err("'libera' vuole una fetta: libera(v)", n.line)
+            a = s.ex(n.args[0])
+            if a.t[0] != "s" or n.args[0].k != "id":
+                s.err("'libera' vuole il nome di una variabile di tipo fetta", n.line)
+            s.check_mut(n.args[0])
+            return E(f"({{ free((void*)({a.c}).ptr); {a.c} = ({s.ctype(a.t)}){{0}}; }})", VOID)
         if nm not in s.funcs:
             s.err(f"funzione sconosciuta '{nm}'", n.line)
         params, ret, ext = s.funcs[nm]
