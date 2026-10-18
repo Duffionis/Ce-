@@ -131,12 +131,30 @@ Coppia<B, A>`) and nested (`Coppia<i32, Coppia<i32, i32>>`).
 
     usa "lib/vettore.ce";
     variabile v: Vettore<i32> = Vettore { dati: riserva(i32, 0), n: 0 };
-    v = aggiungi(v, 5);            // values: every change returns a new vector
-    stampa(valore(v, 0));          // bounds-checked
-    libera_vettore(v);
+    v.aggiungi(5);                 // same as aggiungi(v, 5)
+    stampa(v.valore(0));           // bounds-checked
+    v.libera_vettore();
 
 Struct fields used by value must still be defined before they are used
 (put the plain structs first).
+
+## Reference parameters and `v.f(x)`
+
+    funzione incrementa(x: &i32) { x = x + 1; }
+    variabile a: i32 = 10;
+    incrementa(a);                 // a is now 11
+
+A parameter of type `&T` receives the caller's variable itself, so the
+function can change it. Calling is plain (`incrementa(a)`): the argument must
+be a mutable variable, field or element. References are only allowed as
+function parameters: they cannot be stored, returned or kept in variables, so
+they can never outlive what they point to. Extra checks: the same variable
+cannot be passed twice by reference, and a short-lived slice cannot be passed
+alongside a reference to something that lives longer (the function could store
+it there).
+
+`x.f(y)` is another way to write `f(x, y)`, for any function. That is how
+`v.aggiungi(5)` works: there are no classes or `impl` blocks, only functions.
 
 ## Exact layouts: `impacchettata`, bit fields, `misura`
 
@@ -166,8 +184,7 @@ Struct fields used by value must still be defined before they are used
 - Heap memory is manual: forgetting `libera` leaks, and using a copy of a slice
   after `libera` is not caught. `riserva` takes only a plain type name.
 - Modules are flat (one shared namespace, no `pubblico`/private yet) and there
-  is no map yet; the vector is a value (`v = aggiungi(v, x)`), because Ce++ has no
-  safe mutable references yet.
+  is no map yet.
 - Global values can only be numeric/boolean constants.
 - The compiler reports the first error only.
 - External C functions use asm labels: tested on Linux.
@@ -182,5 +199,5 @@ Struct fields used by value must still be defined before they are used
 
 ## Ideas for later
 
-Private names / `pubblico`, explicit endianness, option/result types, safe mutable references (so a vector can have `v.aggiungi(x)`), a map, packed structs and bit fields (emulator work),
+Private names / `pubblico`, explicit endianness, option/result types, a map,
 a direct backend instead of C.

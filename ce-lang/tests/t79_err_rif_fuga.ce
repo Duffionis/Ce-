@@ -1,0 +1,11 @@
+//! sopravvivergli
+struttura S { f: [i32] }
+funzione metti(s: &S, v: [i32]) { s.f = v; }
+funzione principale() -> i32 {
+    variabile s: S;
+    se vero {
+        variabile a: [i32; 2] = [1, 2];
+        metti(s, a[0..2]);
+    }
+    ritorna 0;
+}

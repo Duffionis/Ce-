@@ -42,6 +42,8 @@ def tstr(t):
         return t[1]
     if k == "ptr":
         return "*" + tstr(t[1])
+    if k == "ref":
+        return "&" + tstr(t[1])
     if k == "s":
         return "[" + tstr(t[1]) + "]"
     return f"[{tstr(t[1])}; {t[2]}]"
@@ -54,7 +56,7 @@ def es_tipo(x):
                 and all(isinstance(a, tuple) and es_tipo(a) for a in x[2]))
     if k in ("p", "st"):
         return len(x) == 2 and isinstance(x[1], str)
-    if k in ("s", "ptr"):
+    if k in ("s", "ptr", "ref"):
         return len(x) == 2 and isinstance(x[1], tuple) and es_tipo(x[1])
     if k == "a":
         return len(x) == 3 and isinstance(x[1], tuple) and es_tipo(x[1]) and isinstance(x[2], int)
@@ -70,7 +72,7 @@ def sost(t, b):
         return t
     if k == "g":
         return ("g", t[1], tuple(sost(a, b) for a in t[2]))
-    if k in ("s", "ptr"):
+    if k in ("s", "ptr", "ref"):
         return (k, sost(t[1], b))
     return ("a", sost(t[1], b), t[2])
 
@@ -283,6 +285,8 @@ class Gen:
             return s.cid(t[1])
         if k == "ptr":
             return "P" + s.mangle(t[1])
+        if k == "ref":
+            return "R" + s.mangle(t[1])
         if k == "s":
             return "S" + s.mangle(t[1])
         return f"A{t[2]}_" + s.mangle(t[1])
@@ -293,7 +297,7 @@ class Gen:
             return CT[t[1]]
         if k == "st":
             return "S_" + s.cid(t[1])
-        if k == "ptr":
+        if k in ("ptr", "ref"):
             return s.ctype(t[1]) + "*"
         if k == "s":
             name = "ce_s_" + s.mangle(t[1])
@@ -319,6 +323,8 @@ class Gen:
                 s.err(f"tipo sconosciuto '{t[1]}'", line)
             if val and t[1] not in s.defined:
                 s.err(f"la struttura '{t[1]}' va definita prima di usarla per valore", line)
+        elif k == "ref":
+            s.err("un riferimento (&) si puo' usare solo come tipo di un parametro", line)
         elif k == "ptr":
             s.check_type(t[1], line, False)
         elif k == "s":
@@ -821,7 +827,22 @@ class Gen:
             s.err(f"'{nm}' e' una funzione C: chiamala dentro un blocco 'rischio'", n.line)
         if len(n.args) != len(params):
             s.err(f"'{nm}' vuole {len(params)} argomenti, ne ha ricevuti {len(n.args)}", n.line)
-        args = [s.coerce(a, pt, True) for a, (pn, pt) in zip(n.args, params)]
+        args, refs = [], []
+        for a, (pn, pt) in zip(n.args, params):
+            if pt[0] != "ref":
+                args.append(s.coerce(a, pt, True))
+                continue
+            e = s.ex(a, pt[1])
+            if e.t != pt[1]:
+                s.err(f"tipo diverso: atteso {tstr(pt[1])}, trovato {tstr(e.t)}", a.line)
+            if not e.lv:
+                s.err(f"'{nm}' cambia questo argomento: serve una variabile, un campo o un elemento", a.line)
+            s.check_mut(a)
+            if a.k == "field" and a.e.T[0] == "st" and (a.e.T[1], a.name) in s.bits:
+                s.err("un campo a bit non puo' essere passato per riferimento", a.line)
+            args.append(f"&({e.c})")
+            refs.append(a)
+        s.check_riferimenti(n, refs)
         cn = ("x_" if ext else "f_") + s.cid(nm)
         return E(f"{cn}({', '.join(args)})", ret)
 
@@ -1102,6 +1123,32 @@ class Gen:
         if v is not None and not 0 <= v < (1 << w):
             s.err(f"il valore {v} non sta in {w} bit (il campo '{fname}' va da 0 a {(1 << w) - 1})", node.line)
 
+    def check_riferimenti(s, n, refs):
+        """Argomenti passati per riferimento: niente doppioni, e nulla di piu' corto-vivente
+        deve poter finire dentro un riferimento a qualcosa che vive di piu'."""
+        visti = set()
+        for a in refs:
+            _, root = s.holder(a)
+            if root is not None:
+                if id(root) in visti:
+                    s.err("la stessa variabile non puo' essere passata due volte per riferimento", a.line)
+                visti.add(id(root))
+        for a in refs:
+            if not s.holds(a.T):
+                continue
+            hd, root = s.holder(a)
+            o_max = 0
+            for b2 in n.args:
+                if b2 is a or b2.T[0] not in ("a", "s", "st"):
+                    continue
+                o = s.borrow(b2)
+                if hd is not None and o > hd:
+                    s.err("un dato di vita piu' breve potrebbe finire dentro il riferimento "
+                          "e sopravvivergli", n.line)
+                o_max = max(o_max, o)
+            if root is not None:
+                root.org = max(root.org, o_max)
+
     def reg_gstruct(s, it):
         if it.name in s.structs or it.name in s.gstructs:
             s.err(f"la struttura '{it.name}' e' gia' definita", it.line)
@@ -1137,7 +1184,7 @@ class Gen:
             if t[1] not in s.gstructs:
                 s.err(f"'{t[1]}' non e' una struttura generica", line)
             return ("st", s.inst_struct(t[1], tuple(s.norm_tipo(a, line) for a in t[2]), line))
-        if k in ("s", "ptr"):
+        if k in ("s", "ptr", "ref"):
             return (k, s.norm_tipo(t[1], line))
         if k == "a":
             return ("a", s.norm_tipo(t[1], line), t[2])
@@ -1192,6 +1239,8 @@ class Gen:
         s.generics[f.name] = f
 
     def unifica(s, pt, at, tps, b, line):
+        if pt[0] == "ref":
+            return s.unifica(pt[1], at, tps, b, line)
         if pt[0] == "st" and pt[1] in tps:
             old = b.get(pt[1])
             if old is None:
@@ -1216,7 +1265,8 @@ class Gen:
         ordine += [i for i, a in enumerate(n.args) if s.is_lit(a)]
         for i in ordine:
             pt = g.params[i].ty
-            pronto = sost(pt, b)
+            pe = pt[1] if pt[0] == "ref" else pt
+            pronto = sost(pe, b)
             hint = None if ha_param(pronto, tps) else pronto
             e = s.ex(n.args[i], hint)
             s.unifica(pt, e.t, tps, b, n.line)
@@ -1240,7 +1290,12 @@ class Gen:
             s.err(f"la funzione '{f.name}' e' gia' definita", f.line)
         params = []
         for p in f.params:
-            s.check_type(p.ty, p.line, True)
+            if p.ty[0] == "ref":
+                if f.extern:
+                    s.err("una funzione 'esterna' (C) non puo' avere parametri riferimento (&)", p.line)
+                s.check_type(p.ty[1], p.line, True)
+            else:
+                s.check_type(p.ty, p.line, True)
             params.append((p.name, p.ty))
         s.check_type(f.ret, f.line, False)
         if f.name == "principale":
@@ -1277,6 +1332,11 @@ class Gen:
         s.scopes.append({})
         plist = []
         for pn, pt in params:
+            if pt[0] == "ref":
+                cv = s.declare(pn, pt[1], True, f.line)
+                plist.append(f"{s.ctype(pt[1])}* {cv}")
+                s.scopes[-1][pn].c = f"(*{cv})"
+                continue
             cv = s.declare(pn, pt, False, f.line)
             plist.append(f"{s.ctype(pt)} {cv}")
         s.L = [f'#line {f.line} "{s.cfile}"',

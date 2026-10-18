@@ -203,6 +203,8 @@ class Parser:
         t = s.tok
         if s.acc("*"):
             return ("ptr", s.tipo())
+        if s.acc("&"):
+            return ("ref", s.tipo())
         if s.acc("["):
             el = s.tipo()
             if s.acc(";"):
@@ -388,7 +390,12 @@ class Parser:
                 s.nostruct = ns
             elif s.is_("."):
                 s.i += 1
-                e = N("field", t[2], e=e, name=s.ident())
+                nome = s.ident()
+                if s.is_("("):      # v.f(x)  e'  f(v, x)
+                    s.i += 1
+                    e = N("call", t[2], name=nome, args=[e] + s.seq(")", s.expr))
+                else:
+                    e = N("field", t[2], e=e, name=nome)
             else:
                 return e
 

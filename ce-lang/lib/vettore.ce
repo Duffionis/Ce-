@@ -1,32 +1,31 @@
 // Vettore<T>: array che cresce. Possiede memoria dell'heap (riserva/libera).
-// Il vettore e' un valore: ogni operazione che lo cambia ne ritorna uno nuovo.
 //
 //   usa "lib/vettore.ce";
 //   variabile v: Vettore<i32> = Vettore { dati: riserva(i32, 0), n: 0 };
-//   v = aggiungi(v, 5);
-//   stampa(valore(v, 0));
-//   libera_vettore(v);
+//   v.aggiungi(5);
+//   stampa(v.valore(0));
+//   v.libera_vettore();
 //
-// Usa SOLO un vettore tenuto in una variabile e riassegnato: dopo
-// 'aggiungi' il vettore vecchio puo' essere stato liberato.
+// 'v.aggiungi(5)' e' un altro modo di scrivere 'aggiungi(v, 5)'. Un
+// parametro '&T' riceve la variabile stessa (la funzione puo' cambiarla).
 
 struttura Vettore<T> {
     dati: [T],
     n: usize,
 }
 
-funzione aggiungi<T>(v: Vettore<T>, x: T) -> Vettore<T> {
-    variabile d: [T] = v.dati;
+funzione aggiungi<T>(v: &Vettore<T>, x: T) {
     se v.n == v.dati.lunghezza {
-        d = riserva(T, v.n * 2 + 4);
+        variabile nuovo: [T] = riserva(T, v.n * 2 + 4);
         per i in 0..v.n {
-            d[i] = v.dati[i];
+            nuovo[i] = v.dati[i];
         }
         variabile vecchio: [T] = v.dati;
         rischio { libera(vecchio); }
+        v.dati = nuovo;
     }
-    d[v.n] = x;
-    ritorna Vettore { dati: d, n: v.n + 1 };
+    v.dati[v.n] = x;
+    v.n += 1;
 }
 
 funzione valore<T>(v: Vettore<T>, i: usize) -> T {
@@ -34,7 +33,9 @@ funzione valore<T>(v: Vettore<T>, i: usize) -> T {
     ritorna v.dati[i];
 }
 
-funzione libera_vettore<T>(v: Vettore<T>) {
+funzione libera_vettore<T>(v: &Vettore<T>) {
     variabile d: [T] = v.dati;
     rischio { libera(d); }
+    v.dati = d;
+    v.n = 0;
 }

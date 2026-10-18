@@ -1,0 +1,5 @@
+//! solo come tipo di un parametro
+funzione principale() -> i32 {
+    variabile x: &i32;
+    ritorna 0;
+}

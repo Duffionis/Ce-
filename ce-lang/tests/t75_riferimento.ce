@@ -1,0 +1,21 @@
+//> 11
+//> 3
+//> 30
+struttura Conta { n: i32, tot: i32 }
+funzione incrementa(x: &i32) { x = x + 1; }
+funzione somma_a(c: &Conta, v: i32) {
+    c.n += 1;
+    c.tot += v;
+}
+funzione principale() -> i32 {
+    variabile a: i32 = 10;
+    incrementa(a);
+    stampa(a);
+    variabile c: Conta = Conta { n: 0, tot: 0 };
+    c.somma_a(10);
+    c.somma_a(20);
+    somma_a(c, 0);
+    stampa(c.n);
+    stampa(c.tot);
+    ritorna 0;
+}
