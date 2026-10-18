@@ -16,7 +16,8 @@ from genera import genera
 
 FLAG = ["-std=gnu11", "-O2", "-fwrapv", "-fno-strict-aliasing",
         "-fno-delete-null-pointer-checks", "-fstack-protector-strong",
-        "-Wall", "-Wno-unused", "-Wno-missing-braces", "-Wno-parentheses"]
+        "-Wall", "-Wno-unused", "-Wno-missing-braces", "-Wno-parentheses",
+        "-Wno-address-of-packed-member"]
 
 
 def carica(path):

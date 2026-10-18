@@ -170,17 +170,26 @@ class Parser:
                 if not s.acc(","):
                     break
             s.chiudi_angolo()
+        packed = s.acc("impacchettata")
         s.exp("{")
         campi = []
         while not s.is_("}"):
             fl = s.tok[2]
             fn = s.ident()
             s.exp(":")
-            campi.append(N("campo_def", fl, name=fn, ty=s.tipo()))
+            ty = s.tipo()
+            bits = None
+            if s.acc(":"):
+                w = s.tok
+                if w[0] != "num" or w[1][1]:
+                    s.e("dopo il secondo ':' ci vuole il numero di bit (un intero)")
+                bits = w[1][0]
+                s.i += 1
+            campi.append(N("campo_def", fl, name=fn, ty=ty, bits=bits))
             if not s.acc(","):
                 break
         s.exp("}")
-        return N("struct", ln, name=nome, fields=campi, tparams=tps)
+        return N("struct", ln, name=nome, fields=campi, tparams=tps, packed=packed)
 
     def chiudi_angolo(s):
         """Chiude '<...>' anche quando il lessico ha letto '>>' (Vettore<Vettore<i32>>)."""

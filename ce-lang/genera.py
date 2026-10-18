@@ -27,7 +27,7 @@ RANGE = {k: ((-(1 << (BITS[k] - 1)), (1 << (BITS[k] - 1)) - 1) if k in SIGNED
 
 VOID, BOOL = ("p", "void"), ("p", "bool")
 I32, F64, USIZE = ("p", "i32"), ("p", "f64"), ("p", "usize")
-BUILTIN = ("stampa", "scrivi", "panico", "afferma", "riserva", "libera")
+BUILTIN = ("stampa", "scrivi", "panico", "afferma", "riserva", "libera", "misura")
 
 
 def is_int(t):
@@ -234,6 +234,7 @@ class Gen:
         s.fname = fname
         s.main = fname
         s.generics = {}   # nome -> funzione generica (nodo)
+        s.bits = {}       # (struttura, campo) -> larghezza in bit (campi a bit)
         s.gstructs = {}   # nome -> struttura generica (nodo)
         s.ginst = {}      # istanza concreta -> (nome generico, argomenti)
         s.pending = []    # istanze generiche da generare
@@ -603,6 +604,7 @@ class Gen:
             if f.name in seen:
                 s.err(f"il campo '{f.name}' e' ripetuto", f.line)
             seen.add(f.name)
+            s.check_bits(n.name, f.name, f.e)
             parts.append(f".m_{s.cid(f.name)} = {s.coerce(f.e, defs[f.name], False)}")
         t = ("st", n.name)
         body = ", ".join(parts) if parts else "0"
@@ -618,6 +620,8 @@ class Gen:
             o = s.ex(n.e)
             if not o.lv:
                 s.err("'&' vuole una variabile, un campo o un elemento", n.line)
+            if n.e.k == "field" and n.e.e.T[0] == "st" and (n.e.e.T[1], n.e.name) in s.bits:
+                s.err("un campo a bit non ha un indirizzo: non si puo' usare '&'", n.line)
             return E(f"(&({o.c}))", ("ptr", o.t))
         if op == "*":
             if not s.risk:
@@ -793,6 +797,11 @@ class Gen:
             u = s.uid()
             return E(f"({{ size_t _n{u} = (size_t)({cnt}); "
                      f"({s.ctype(st)}){{ ({s.ctype(t)}*)ce_riserva(_n{u}, sizeof({s.ctype(t)}), {n.line}), _n{u} }}; }})", st)
+        if nm == "misura":
+            if len(n.args) != 1:
+                s.err("'misura' vuole un tipo: misura(Registro)", n.line)
+            t = s.nome_tipo(n.args[0])
+            return E(f"((size_t)sizeof({s.ctype(t)}))", USIZE)
         if nm == "libera":
             if not s.risk:
                 s.err("'libera' e' pericolosa (la fetta deve venire da 'riserva'): usala dentro un blocco 'rischio'", n.line)
@@ -1031,6 +1040,8 @@ class Gen:
         s.check_mut(n.t)
         if n.op == "=":
             v = s.coerce(n.v, t.t, False)
+            if n.t.k == "field" and n.t.e.T[0] == "st":
+                s.check_bits(n.t.e.T[1], n.t.name, n.v)
             if s.holds(t.t):
                 o = s.borrow(n.v)
                 hd, root = s.holder(n.t)
@@ -1065,10 +1076,31 @@ class Gen:
             seen.add(f.name)
             s.check_type(f.ty, f.line, True)
             fields.append((f.name, f.ty))
-            parts.append(f"{s.ctype(f.ty)} m_{s.cid(f.name)};")
+            w = getattr(f, "bits", None)
+            if w is None:
+                parts.append(f"{s.ctype(f.ty)} m_{s.cid(f.name)};")
+            else:
+                if f.ty[0] != "p" or f.ty[1] not in ("u8", "u16", "u32", "u64", "bool"):
+                    s.err("i campi a bit possono essere solo u8, u16, u32, u64 o booleano", f.line)
+                lim = 1 if f.ty[1] == "bool" else BITS[f.ty[1]]
+                if not 1 <= w <= lim:
+                    s.err(f"un campo {tstr(f.ty)} puo' avere da 1 a {lim} bit, non {w}", f.line)
+                s.bits[(it.name, f.name)] = w
+                parts.append(f"{s.ctype(f.ty)} m_{s.cid(f.name)} : {w};")
         s.structs[it.name] = fields
         s.defined.add(it.name)
-        s.tdecl.append(f"struct S_{s.cid(it.name)} {{ {' '.join(parts)} }};")
+        attr = " __attribute__((packed))" if getattr(it, "packed", False) else ""
+        s.tdecl.append(f"struct{attr} S_{s.cid(it.name)} {{ {' '.join(parts)} }};")
+
+    def check_bits(s, sname, fname, node):
+        w = s.bits.get((sname, fname))
+        if w is None:
+            return
+        v = s.const_int(node)
+        if v is None and node.k == "bool":
+            v = int(node.val)
+        if v is not None and not 0 <= v < (1 << w):
+            s.err(f"il valore {v} non sta in {w} bit (il campo '{fname}' va da 0 a {(1 << w) - 1})", node.line)
 
     def reg_gstruct(s, it):
         if it.name in s.structs or it.name in s.gstructs:
@@ -1092,9 +1124,10 @@ class Gen:
             s.structs[nome] = []
             s.ginst[nome] = (gname, args)
             b = dict(zip(g.tparams, args))
-            campi = [N("campo_def", f.line, name=f.name, ty=s.norm_tipo(sost(f.ty, b), f.line))
-                     for f in g.fields]
-            s.def_struct(N("struct", g.line, name=nome, fields=campi, tparams=[]))
+            campi = [N("campo_def", f.line, name=f.name, ty=s.norm_tipo(sost(f.ty, b), f.line),
+                       bits=getattr(f, "bits", None)) for f in g.fields]
+            s.def_struct(N("struct", g.line, name=nome, fields=campi, tparams=[],
+                           packed=getattr(g, "packed", False)))
         return nome
 
     def norm_tipo(s, t, line):

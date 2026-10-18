@@ -1,0 +1,7 @@
+//! non ha un indirizzo
+struttura R { modo: u8 : 3 }
+funzione principale() -> i32 {
+    variabile r: R;
+    rischio { variabile p: *u8 = &r.modo; }
+    ritorna 0;
+}

@@ -138,6 +138,27 @@ Coppia<B, A>`) and nested (`Coppia<i32, Coppia<i32, i32>>`).
 Struct fields used by value must still be defined before they are used
 (put the plain structs first).
 
+## Exact layouts: `impacchettata`, bit fields, `misura`
+
+    struttura Registro impacchettata {
+        modo: u8 : 3,          // 3 bits
+        attivo: booleano : 1,  // 1 bit
+        dato: u16 : 12,        // 12 bits  -> the whole struct is 2 bytes
+    }
+    stampa(misura(Registro));  // size in bytes: 2
+
+- `: N` after a field type makes it an `N`-bit field. Allowed types: `u8 u16
+  u32 u64 booleano` (unsigned only, so there is no implementation-defined
+  sign handling). Writing a constant that does not fit is a compile error;
+  other values wrap to `N` bits like all Ce++ integers.
+- A bit field has no address: `&campo` is an error.
+- `impacchettata` removes the padding between fields. Without it the struct
+  is laid out like C. Bit order inside a byte follows gcc/clang (first field =
+  lowest bits on little-endian machines such as x86 and ARM).
+- `misura(T)` gives `sizeof` for a struct or basic type, to check layouts.
+- Fields of a packed struct may be unaligned; reading and writing them is
+  fine, but handing them to C code through pointers may not be.
+
 ## Known limits (v0.1, be honest about them)
 
 - Slice lifetime checking is by block level and conservative: it may reject
@@ -161,5 +182,5 @@ Struct fields used by value must still be defined before they are used
 
 ## Ideas for later
 
-Private names / `pubblico`, option/result types, safe mutable references (so a vector can have `v.aggiungi(x)`), a map, packed structs and bit fields (emulator work),
+Private names / `pubblico`, explicit endianness, option/result types, safe mutable references (so a vector can have `v.aggiungi(x)`), a map, packed structs and bit fields (emulator work),
 a direct backend instead of C.
