@@ -1,0 +1,40 @@
+// Vettore<T>: array che cresce. Possiede memoria dell'heap (riserva/libera).
+// Il vettore e' un valore: ogni operazione che lo cambia ne ritorna uno nuovo.
+//
+//   usa "lib/vettore.ce";
+//   variabile v: Vettore<i32> = Vettore { dati: riserva(i32, 0), n: 0 };
+//   v = aggiungi(v, 5);
+//   stampa(valore(v, 0));
+//   libera_vettore(v);
+//
+// Usa SOLO un vettore tenuto in una variabile e riassegnato: dopo
+// 'aggiungi' il vettore vecchio puo' essere stato liberato.
+
+struttura Vettore<T> {
+    dati: [T],
+    n: usize,
+}
+
+funzione aggiungi<T>(v: Vettore<T>, x: T) -> Vettore<T> {
+    variabile d: [T] = v.dati;
+    se v.n == v.dati.lunghezza {
+        d = riserva(T, v.n * 2 + 4);
+        per i in 0..v.n {
+            d[i] = v.dati[i];
+        }
+        variabile vecchio: [T] = v.dati;
+        rischio { libera(vecchio); }
+    }
+    d[v.n] = x;
+    ritorna Vettore { dati: d, n: v.n + 1 };
+}
+
+funzione valore<T>(v: Vettore<T>, i: usize) -> T {
+    afferma(i < v.n, "indice fuori dal vettore");
+    ritorna v.dati[i];
+}
+
+funzione libera_vettore<T>(v: Vettore<T>) {
+    variabile d: [T] = v.dati;
+    rischio { libera(d); }
+}

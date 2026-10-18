@@ -49,6 +49,9 @@ def tstr(t):
 
 def es_tipo(x):
     k = x[0] if x else None
+    if k == "g":
+        return (len(x) == 3 and isinstance(x[1], str) and isinstance(x[2], tuple)
+                and all(isinstance(a, tuple) and es_tipo(a) for a in x[2]))
     if k in ("p", "st"):
         return len(x) == 2 and isinstance(x[1], str)
     if k in ("s", "ptr"):
@@ -65,6 +68,8 @@ def sost(t, b):
         return b.get(t[1], t)
     if k == "p":
         return t
+    if k == "g":
+        return ("g", t[1], tuple(sost(a, b) for a in t[2]))
     if k in ("s", "ptr"):
         return (k, sost(t[1], b))
     return ("a", sost(t[1], b), t[2])
@@ -76,6 +81,8 @@ def ha_param(t, tps):
         return t[1] in tps
     if k == "p":
         return False
+    if k == "g":
+        return any(ha_param(a, tps) for a in t[2])
     return ha_param(t[1], tps)
 
 
@@ -201,9 +208,10 @@ static CE_NORET CE_UNUSED void ce_panic_msg_(const uint8_t* p, size_t n, long li
 
 PRINTERS = r'''
 static CE_UNUSED void* ce_riserva(size_t n, size_t size, long line) {
-    void* p = calloc(n ? n : 1, size);
+    if (n == 0) return NULL;
+    void* p = calloc(n, size);
     if (!p) ce_panic_lit("memoria esaurita", line);
-    return n ? p : NULL;
+    return p;
 }
 static CE_UNUSED void ce_pi(int64_t x) { printf("%lld", (long long)x); }
 static CE_UNUSED void ce_pu(uint64_t x) { printf("%llu", (unsigned long long)x); }
@@ -226,6 +234,8 @@ class Gen:
         s.fname = fname
         s.main = fname
         s.generics = {}   # nome -> funzione generica (nodo)
+        s.gstructs = {}   # nome -> struttura generica (nodo)
+        s.ginst = {}      # istanza concreta -> (nome generico, argomenti)
         s.pending = []    # istanze generiche da generare
         s.ninst = 0
         s.dframes = []   # un blocco per ogni '{': codice C dei 'rimanda' in attesa
@@ -581,6 +591,8 @@ class Gen:
         return E(c, at)
 
     def x_slit(s, n, hint):
+        if n.name in s.gstructs:
+            n.name = s.slit_istanza(n, hint)
         if n.name not in s.structs:
             s.err(f"struttura sconosciuta '{n.name}'", n.line)
         defs = dict(s.structs[n.name])
@@ -1058,6 +1070,82 @@ class Gen:
         s.defined.add(it.name)
         s.tdecl.append(f"struct S_{s.cid(it.name)} {{ {' '.join(parts)} }};")
 
+    def reg_gstruct(s, it):
+        if it.name in s.structs or it.name in s.gstructs:
+            s.err(f"la struttura '{it.name}' e' gia' definita", it.line)
+        for i, tp in enumerate(it.tparams):
+            if tp in it.tparams[:i]:
+                s.err(f"il parametro di tipo '{tp}' e' ripetuto", it.line)
+            if tp in s.structs or tp in PRIMS or tp in ALIAS_TIPI or tp == "testo":
+                s.err(f"'{tp}' e' gia' un tipo: scegli un altro nome per il parametro", it.line)
+        s.gstructs[it.name] = it
+
+    def inst_struct(s, gname, args, line):
+        g = s.gstructs[gname]
+        if len(args) != len(g.tparams):
+            s.err(f"'{gname}' vuole {len(g.tparams)} tipi tra < >, ne ha ricevuti {len(args)}", line)
+        nome = gname + "__" + "_".join(s.mangle(a) for a in args)
+        if nome not in s.structs:
+            s.ninst += 1
+            if s.ninst > 200:
+                s.err("troppe istanze generiche (ricorsione infinita sui tipi?)", line)
+            s.structs[nome] = []
+            s.ginst[nome] = (gname, args)
+            b = dict(zip(g.tparams, args))
+            campi = [N("campo_def", f.line, name=f.name, ty=s.norm_tipo(sost(f.ty, b), f.line))
+                     for f in g.fields]
+            s.def_struct(N("struct", g.line, name=nome, fields=campi, tparams=[]))
+        return nome
+
+    def norm_tipo(s, t, line):
+        """Trasforma i tipi generici concreti (Vettore<i32>) nelle strutture vere."""
+        k = t[0]
+        if k == "g":
+            if t[1] not in s.gstructs:
+                s.err(f"'{t[1]}' non e' una struttura generica", line)
+            return ("st", s.inst_struct(t[1], tuple(s.norm_tipo(a, line) for a in t[2]), line))
+        if k in ("s", "ptr"):
+            return (k, s.norm_tipo(t[1], line))
+        if k == "a":
+            return ("a", s.norm_tipo(t[1], line), t[2])
+        return t
+
+    def norm(s, x, line=0):
+        if isinstance(x, N):
+            y = copy.copy(x)
+            for k, v in x.__dict__.items():
+                if k not in ("k", "line", "file"):
+                    setattr(y, k, s.norm(v, x.line))
+            return y
+        if isinstance(x, list):
+            return [s.norm(v, line) for v in x]
+        if isinstance(x, tuple):
+            if x and isinstance(x[0], str) and es_tipo(x):
+                return s.norm_tipo(x, line)
+            return tuple(s.norm(v, line) for v in x)
+        return x
+
+    def slit_istanza(s, n, hint):
+        g = s.gstructs[n.name]
+        if hint and hint[0] == "st" and s.ginst.get(hint[1], (None,))[0] == n.name:
+            return hint[1]
+        defs = {f.name: f.ty for f in g.fields}
+        b = {}
+        for f in n.fields:
+            if f.name not in defs:
+                s.err(f"la struttura '{n.name}' non ha il campo '{f.name}'", f.line)
+        ordine = [f for f in n.fields if not s.is_lit(f.e)] + [f for f in n.fields if s.is_lit(f.e)]
+        for f in ordine:
+            pt = defs[f.name]
+            pronto = sost(pt, b)
+            e = s.ex(f.e, None if ha_param(pronto, g.tparams) else s.norm_tipo(pronto, f.line))
+            s.unifica(pt, e.t, g.tparams, b, f.line)
+        for tp in g.tparams:
+            if tp not in b:
+                s.err(f"non riesco a capire il tipo '{tp}' di '{n.name}': scrivi il tipo, "
+                      f"ad esempio variabile v: {n.name}<...> = ...", n.line)
+        return s.inst_struct(n.name, tuple(b[tp] for tp in g.tparams), n.line)
+
     def reg_generic(s, f):
         if f.name in s.funcs or f.name in s.generics or f.name in BUILTIN:
             s.err(f"la funzione '{f.name}' e' gia' definita", f.line)
@@ -1077,6 +1165,11 @@ class Gen:
                 b[pt[1]] = at
             elif old != at:
                 s.err(f"il tipo generico '{pt[1]}' vale sia {tstr(old)} sia {tstr(at)}", line)
+        elif pt[0] == "g" and at[0] == "st" and at[1] in s.ginst:
+            gn, args = s.ginst[at[1]]
+            if gn == pt[1]:
+                for p2, a2 in zip(pt[2], args):
+                    s.unifica(p2, a2, tps, b, line)
         elif pt[0] in ("s", "ptr", "a") and at[0] in ("s", "ptr", "a"):
             s.unifica(pt[1], at[1], tps, b, line)
 
@@ -1102,7 +1195,7 @@ class Gen:
             s.ninst += 1
             if s.ninst > 200:
                 s.err("troppe istanze di funzioni generiche (ricorsione infinita sui tipi?)", n.line)
-            inst = riscrivi(g, b)
+            inst = s.norm(riscrivi(g, b), g.line)
             inst.name, inst.tparams, inst.file = nome, [], getattr(g, "file", None)
             inst.desc = f"{g.name} con " + ", ".join(f"{tp} = {tstr(b[tp])}" for tp in tps)
             s.reg_fn(inst)
@@ -1167,15 +1260,25 @@ class Gen:
 
     def programma(s, items):
         for it in items:
+            if it.k == "struct" and it.tparams:
+                s.entra(it)
+                s.reg_gstruct(it)
+        items = [it for it in items if not (it.k == "struct" and it.tparams)]
+        for it in items:
             if it.k == "struct":
                 s.entra(it)
-                if it.name in s.structs:
+                if it.name in s.structs or it.name in s.gstructs:
                     s.err(f"la struttura '{it.name}' e' gia' definita", it.line)
                 s.structs[it.name] = []
         for it in items:
             if it.k == "struct":
                 s.entra(it)
+                it.fields = s.norm(it.fields, it.line)
                 s.def_struct(it)
+        for i, it in enumerate(items):
+            if (it.k == "fn" and not it.tparams) or it.k == "var":
+                s.entra(it)
+                items[i] = s.norm(it, it.line)
         for it in items:
             if it.k == "fn":
                 s.entra(it)

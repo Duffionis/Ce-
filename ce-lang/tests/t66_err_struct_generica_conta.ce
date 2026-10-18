@@ -1,0 +1,6 @@
+//! vuole 2 tipi tra < >
+struttura Coppia<A, B> { primo: A, secondo: B }
+funzione principale() -> i32 {
+    variabile c: Coppia<i32> = Coppia { primo: 1, secondo: 2 };
+    ritorna 0;
+}

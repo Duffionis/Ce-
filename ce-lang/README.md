@@ -114,7 +114,29 @@ runtime cost. `T` can also be used inside the body (`variabile s: T`,
 - A generic function is only checked when it is used: an unused one is not
   type-checked.
 - `T` must be deducible from the arguments (no explicit `massimo<i32>(...)` yet).
-- Generic structs (needed for a ready-made vector) come next.
+
+## Generic structs and `lib/vettore.ce`
+
+    struttura Coppia<A, B> { primo: A, secondo: B }
+    variabile c: Coppia<i32, f64> = Coppia { primo: 1, secondo: 2.5 };
+
+`Coppia<i32, f64>` is a real struct generated for those types. In a literal
+the compiler takes the types from the declared type, or from the fields
+(`Coppia { primo: 1, secondo: 2.5 }` inside `apri(...)`). Generic structs can
+be passed to generic functions (`funzione scambia<A, B>(c: Coppia<A, B>) ->
+Coppia<B, A>`) and nested (`Coppia<i32, Coppia<i32, i32>>`).
+
+`lib/vettore.ce` is a growable vector written in Ce++ itself on top of
+`riserva`/`libera`:
+
+    usa "lib/vettore.ce";
+    variabile v: Vettore<i32> = Vettore { dati: riserva(i32, 0), n: 0 };
+    v = aggiungi(v, 5);            // values: every change returns a new vector
+    stampa(valore(v, 0));          // bounds-checked
+    libera_vettore(v);
+
+Struct fields used by value must still be defined before they are used
+(put the plain structs first).
 
 ## Known limits (v0.1, be honest about them)
 
@@ -123,7 +145,8 @@ runtime cost. `T` can also be used inside the body (`variabile s: T`,
 - Heap memory is manual: forgetting `libera` leaks, and using a copy of a slice
   after `libera` is not caught. `riserva` takes only a plain type name.
 - Modules are flat (one shared namespace, no `pubblico`/private yet) and there
-  are no generic structs yet, so no ready-made vector or map.
+  is no map yet; the vector is a value (`v = aggiungi(v, x)`), because Ce++ has no
+  safe mutable references yet.
 - Global values can only be numeric/boolean constants.
 - The compiler reports the first error only.
 - External C functions use asm labels: tested on Linux.
@@ -138,5 +161,5 @@ runtime cost. `T` can also be used inside the body (`variabile s: T`,
 
 ## Ideas for later
 
-Private names / `pubblico`, option/result types, generic structs (vector, map), packed structs and bit fields (emulator work),
+Private names / `pubblico`, option/result types, safe mutable references (so a vector can have `v.aggiungi(x)`), a map, packed structs and bit fields (emulator work),
 a direct backend instead of C.

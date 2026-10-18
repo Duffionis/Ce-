@@ -1,0 +1,7 @@
+//> 5
+struttura Scatola<T> { dentro: T }
+funzione apri<T>(s: Scatola<T>) -> T { ritorna s.dentro; }
+funzione principale() -> i32 {
+    stampa(apri(Scatola { dentro: 5 }));
+    ritorna 0;
+}

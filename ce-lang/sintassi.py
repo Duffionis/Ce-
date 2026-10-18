@@ -145,7 +145,7 @@ class Parser:
                 tps.append(s.ident())
                 if not s.acc(","):
                     break
-            s.exp(">")
+            s.chiudi_angolo()
         s.exp("(")
         params = []
         while not s.is_(")"):
@@ -163,6 +163,13 @@ class Parser:
 
     def struttura(s, ln):
         nome = s.ident()
+        tps = []
+        if s.acc("<"):
+            while True:
+                tps.append(s.ident())
+                if not s.acc(","):
+                    break
+            s.chiudi_angolo()
         s.exp("{")
         campi = []
         while not s.is_("}"):
@@ -173,7 +180,15 @@ class Parser:
             if not s.acc(","):
                 break
         s.exp("}")
-        return N("struct", ln, name=nome, fields=campi)
+        return N("struct", ln, name=nome, fields=campi, tparams=tps)
+
+    def chiudi_angolo(s):
+        """Chiude '<...>' anche quando il lessico ha letto '>>' (Vettore<Vettore<i32>>)."""
+        if s.is_(">>"):
+            t = s.tok
+            s.t[s.i] = ("op", ">", t[2])
+            return
+        s.exp(">")
 
     def tipo(s):
         t = s.tok
@@ -202,7 +217,17 @@ class Parser:
             if nome == "testo":
                 return TESTO
             nome = ALIAS_TIPI.get(nome, nome)
-            return ("p", nome) if nome in PRIMS else ("st", nome)
+            if nome in PRIMS:
+                return ("p", nome)
+            if s.acc("<"):
+                args = []
+                while True:
+                    args.append(s.tipo())
+                    if not s.acc(","):
+                        break
+                s.chiudi_angolo()
+                return ("g", nome, tuple(args))
+            return ("st", nome)
         s.e(f"atteso un tipo, trovato {s.desc()}")
 
     def vardecl(s, glob=False):

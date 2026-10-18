@@ -1,0 +1,19 @@
+//> 10
+//> 45
+//> 9
+usa "../lib/vettore.ce";
+funzione principale() -> i32 {
+    variabile v: Vettore<i32> = Vettore { dati: riserva(i32, 0), n: 0 };
+    per i in 0..10 {
+        v = aggiungi(v, i);
+    }
+    variabile somma: i32 = 0;
+    per i in 0..v.n {
+        somma += valore(v, i);
+    }
+    stampa(v.n);
+    stampa(somma);
+    stampa(valore(v, 9));
+    libera_vettore(v);
+    ritorna 0;
+}

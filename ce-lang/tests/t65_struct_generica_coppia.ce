@@ -1,0 +1,16 @@
+//> 2.5
+//> 1
+//> 7
+struttura Coppia<A, B> { primo: A, secondo: B }
+funzione scambia<A, B>(c: Coppia<A, B>) -> Coppia<B, A> {
+    ritorna Coppia { primo: c.secondo, secondo: c.primo };
+}
+funzione principale() -> i32 {
+    variabile c: Coppia<i32, f64> = Coppia { primo: 1, secondo: 2.5 };
+    variabile d: Coppia<f64, i32> = scambia(c);
+    stampa(d.primo);
+    stampa(d.secondo);
+    variabile e: Coppia<i32, Coppia<i32, i32>> = Coppia { primo: 3, secondo: Coppia { primo: 7, secondo: 8 } };
+    stampa(e.secondo.primo);
+    ritorna 0;
+}
