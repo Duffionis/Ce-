@@ -1,0 +1,10 @@
+//> 3
+funzione crea<T>(n: usize) -> [T] {
+    ritorna riserva(T, n);
+}
+funzione principale() -> i32 {
+    variabile v: [i32] = crea(3);
+    rimanda { rischio { libera(v); } }
+    stampa(v.lunghezza);
+    ritorna 0;
+}

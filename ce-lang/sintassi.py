@@ -191,6 +191,26 @@ class Parser:
         s.exp("}")
         return N("struct", ln, name=nome, fields=campi, tparams=tps, packed=packed)
 
+    def targs_ahead(s):
+        """Siamo su '<': e' 'nome<tipi>(' (chiamata con tipi espliciti) e non un confronto?"""
+        d, j = 0, s.i
+        while j < len(s.t):
+            k, v, _ = s.t[j]
+            if k == "op" and v == "<":
+                d += 1
+            elif k == "op" and v == ">":
+                d -= 1
+            elif k == "op" and v == ">>":
+                d -= 2
+            elif k in ("id", "num") or (k == "op" and v in (",", "[", "]", ";", "*", "&")):
+                pass
+            else:
+                return False
+            j += 1
+            if d <= 0:
+                return d == 0 and s.t[j][0] == "op" and s.t[j][1] == "("
+        return False
+
     def chiudi_angolo(s):
         """Chiude '<...>' anche quando il lessico ha letto '>>' (Vettore<Vettore<i32>>)."""
         if s.is_(">>"):
@@ -366,7 +386,18 @@ class Parser:
         e = s.primary()
         while True:
             t = s.tok
-            if s.is_("("):
+            if e.k == "id" and s.is_("<") and s.targs_ahead():
+                s.i += 1
+                targs = []
+                while True:
+                    targs.append(s.tipo())
+                    if not s.acc(","):
+                        break
+                s.chiudi_angolo()
+                s.exp("(")
+                args = s.seq(")", s.expr)
+                e = N("call", t[2], name=e.name, args=args, targs=targs)
+            elif s.is_("("):
                 if e.k != "id":
                     s.e("si possono chiamare solo funzioni per nome")
                 s.i += 1

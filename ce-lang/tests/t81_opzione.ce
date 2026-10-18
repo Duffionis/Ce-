@@ -1,0 +1,20 @@
+//> 5
+//> 99
+//> 7
+usa "../lib/opzione.ce";
+funzione trova(v: [i32], x: i32) -> Opzione<usize> {
+    per i in 0..v.lunghezza {
+        se v[i] == x { ritorna qualcuno(i); }
+    }
+    ritorna nessuno();
+}
+funzione principale() -> i32 {
+    variabile o: Opzione<i32> = qualcuno(5);
+    variabile v: Opzione<i32> = nessuno();
+    stampa(valore_certo(o));
+    stampa(v.valore_o(99));
+    variabile a: [i32; 3] = [4, 7, 9];
+    variabile r: Opzione<usize> = trova(a, 9);
+    se r.c_e { stampa(a[1]); }
+    ritorna 0;
+}

@@ -1,0 +1,14 @@
+//> 3
+//> divisione per zero
+usa "../lib/risultato.ce";
+funzione dividi(a: i32, b: i32) -> Risultato<i32, testo> {
+    se b == 0 { ritorna male("divisione per zero"); }
+    ritorna bene(a / b);
+}
+funzione principale() -> i32 {
+    variabile r: Risultato<i32, testo> = dividi(6, 2);
+    se r.riuscito { stampa(r.valore); } altrimenti { stampa(r.errore); }
+    variabile q: Risultato<i32, testo> = dividi(6, 0);
+    se q.riuscito { stampa(q.valore); } altrimenti { stampa(q.errore); }
+    ritorna 0;
+}

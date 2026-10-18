@@ -1,0 +1,26 @@
+//> 200
+//> falso
+//> vero
+//> 70
+//> 1000
+//> 700
+usa "../lib/mappa.ce";
+funzione principale() -> i32 {
+    variabile m: Mappa<i32, i32> = nuova_mappa();
+    per i in 0..200 {
+        m.inserisci(i * 3, i * 10);
+    }
+    m.inserisci(21, 70);
+    stampa(m.n + 0);
+    stampa(m.contiene(22));
+    stampa(m.contiene(21));
+    stampa(m.cerca(21).valore_o(-1));
+    variabile somma: i32 = 0;
+    per i in 0..200 {
+        somma += m.cerca(i * 3).valore_o(0) - i * 10;
+    }
+    stampa(somma + 1000);
+    stampa(m.cerca(7).valore_o(700));
+    m.libera_mappa();
+    ritorna 0;
+}

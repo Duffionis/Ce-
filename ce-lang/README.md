@@ -113,7 +113,9 @@ runtime cost. `T` can also be used inside the body (`variabile s: T`,
 
 - A generic function is only checked when it is used: an unused one is not
   type-checked.
-- `T` must be deducible from the arguments (no explicit `massimo<i32>(...)` yet).
+- If `T` cannot be worked out from the arguments, the compiler tries the type
+  you declared for the result (`variabile v: [i32] = crea(3);`). Otherwise
+  write it: `crea<i32>(3)`.
 
 ## Generic structs and `lib/vettore.ce`
 
@@ -156,6 +158,23 @@ it there).
 `x.f(y)` is another way to write `f(x, y)`, for any function. That is how
 `v.aggiungi(5)` works: there are no classes or `impl` blocks, only functions.
 
+## Standard library (`lib/`, written in Ce++)
+
+| file | gives you |
+|---|---|
+| `vettore.ce` | `Vettore<T>`: growable array (`aggiungi`, `valore`, `libera_vettore`) |
+| `opzione.ce` | `Opzione<T>`: a value that may be missing (`qualcuno`, `nessuno`, `valore_o`, `valore_certo`) |
+| `risultato.ce` | `Risultato<T, E>`: a value or an error, no panic (`bene`, `male`) |
+| `mappa.ce` | `Mappa<K, V>`: hash map, integer keys (`nuova_mappa`, `inserisci`, `cerca`, `contiene`, `libera_mappa`) |
+
+    usa "lib/mappa.ce";
+    variabile m: Mappa<i32, i32> = nuova_mappa();
+    m.inserisci(7, 70);
+    stampa(m.cerca(7).valore_o(-1));    // 70
+    m.libera_mappa();
+
+`Mappa` has no removal yet and only integer keys (it hashes `k come u64`).
+
 ## Exact layouts: `impacchettata`, bit fields, `misura`
 
     struttura Registro impacchettata {
@@ -183,8 +202,8 @@ it there).
   some code that would be safe, and it does not follow raw pointers (`rischio`).
 - Heap memory is manual: forgetting `libera` leaks, and using a copy of a slice
   after `libera` is not caught. `riserva` takes only a plain type name.
-- Modules are flat (one shared namespace, no `pubblico`/private yet) and there
-  is no map yet.
+- Modules are flat (one shared namespace, no `pubblico`/private yet) and the
+  map has no removal and only integer keys.
 - Global values can only be numeric/boolean constants.
 - The compiler reports the first error only.
 - External C functions use asm labels: tested on Linux.
@@ -199,5 +218,5 @@ it there).
 
 ## Ideas for later
 
-Private names / `pubblico`, explicit endianness, option/result types, a map,
+Private names / `pubblico`, explicit endianness, map removal and text keys,
 a direct backend instead of C.

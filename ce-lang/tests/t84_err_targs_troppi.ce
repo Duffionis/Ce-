@@ -1,0 +1,6 @@
+//! ha 1 tipi generici, ne hai scritti 2
+funzione id<T>(x: T) -> T { ritorna x; }
+funzione principale() -> i32 {
+    stampa(id<i32, i64>(1));
+    ritorna 0;
+}

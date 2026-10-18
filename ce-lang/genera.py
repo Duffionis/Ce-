@@ -818,8 +818,10 @@ class Gen:
                 s.err("'libera' vuole il nome di una variabile di tipo fetta", n.line)
             s.check_mut(n.args[0])
             return E(f"({{ free((void*)({a.c}).ptr); {a.c} = ({s.ctype(a.t)}){{0}}; }})", VOID)
+        if getattr(n, "targs", None) and nm not in s.generics:
+            s.err(f"'{nm}' non e' una funzione generica", n.line)
         if nm in s.generics:
-            nm = n.name = s.istanzia(n)
+            nm = n.name = s.istanzia(n, hint)
         if nm not in s.funcs:
             s.err(f"funzione sconosciuta '{nm}'", n.line)
         params, ret, ext = s.funcs[nm]
@@ -1255,24 +1257,40 @@ class Gen:
         elif pt[0] in ("s", "ptr", "a") and at[0] in ("s", "ptr", "a"):
             s.unifica(pt[1], at[1], tps, b, line)
 
-    def istanzia(s, n):
+    def istanzia(s, n, hint=None):
         """Chiamata a funzione generica: capisce i tipi dagli argomenti e ritorna il nome dell'istanza."""
         g = s.generics[n.name]
         if len(n.args) != len(g.params):
             s.err(f"'{n.name}' vuole {len(g.params)} argomenti, ne ha ricevuti {len(n.args)}", n.line)
         tps, b = g.tparams, {}
+        ta = getattr(n, "targs", None) or []
+        if len(ta) > len(tps):
+            s.err(f"'{n.name}' ha {len(tps)} tipi generici, ne hai scritti {len(ta)}", n.line)
+        for tp, t in zip(tps, ta):
+            s.check_type(t, n.line, False)
+            b[tp] = t
         ordine = [i for i, a in enumerate(n.args) if not s.is_lit(a)]
         ordine += [i for i, a in enumerate(n.args) if s.is_lit(a)]
         for i in ordine:
             pt = g.params[i].ty
             pe = pt[1] if pt[0] == "ref" else pt
             pronto = sost(pe, b)
-            hint = None if ha_param(pronto, tps) else pronto
-            e = s.ex(n.args[i], hint)
+            ah = None if ha_param(pronto, tps) else pronto
+            e = s.ex(n.args[i], ah)
             s.unifica(pt, e.t, tps, b, n.line)
+        if hint is not None and any(tp not in b for tp in tps):
+            b2 = dict(b)
+            try:
+                s.unifica(g.ret, hint, tps, b2, n.line)
+            except ErroreCe:
+                b2 = b
+            for tp in tps:
+                if tp not in b and tp in b2:
+                    b[tp] = b2[tp]
         for tp in tps:
             if tp not in b:
-                s.err(f"non riesco a capire il tipo generico '{tp}' dagli argomenti di '{n.name}'", n.line)
+                s.err(f"non riesco a capire il tipo generico '{tp}' di '{n.name}': scrivilo, "
+                      f"ad esempio {n.name}<...>(...), o dichiara il tipo del risultato", n.line)
         nome = n.name + "__" + "_".join(s.mangle(b[tp]) for tp in tps)
         if nome not in s.funcs:
             s.ninst += 1
