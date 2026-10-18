@@ -1,0 +1,8 @@
+//! atteso '('
+//! atteso un nome
+//! 2 errori
+funzione a {
+    ritorna 0;
+}
+funzione 5() -> i32 { ritorna 0; }
+funzione principale() -> i32 { ritorna 0; }

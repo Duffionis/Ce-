@@ -14,18 +14,20 @@ CE = os.path.join(os.path.dirname(QUI), "ce.py")
 
 
 def attese(path):
-    out, err, pan = [], None, None
+    out, err, pan, no = [], [], None, []
     with open(path, encoding="utf-8") as f:
         for riga in f:
             r = riga.rstrip("\n")
             if r.startswith("//>"):
                 t = r[3:]
                 out.append((t[1:] if t.startswith(" ") else t).rstrip())
+            elif r.startswith("//!-"):
+                no.append(r[4:].strip())
             elif r.startswith("//!"):
-                err = r[3:].strip()
+                err.append(r[3:].strip())
             elif r.startswith("//#"):
                 pan = r[3:].strip()
-    return out, err, pan
+    return out, err, pan, no
 
 
 def main():
@@ -35,14 +37,17 @@ def main():
         nome = os.path.basename(path)
         if filtro not in nome:
             continue
-        out, err, pan = attese(path)
+        out, err, pan, no = attese(path)
         r = subprocess.run([sys.executable, CE, "run", path],
                            capture_output=True, text=True)
         got = [x.rstrip() for x in r.stdout.splitlines()]
         problema = None
-        if err is not None:
-            if r.returncode != 1 or err not in r.stderr:
-                problema = f"atteso errore '{err}' (exit 1), ottenuto exit {r.returncode}: {r.stderr.strip()[:200]}"
+        if err:
+            mancanti = [x for x in err if x not in r.stderr]
+            presenti = [x for x in no if x in r.stderr]
+            if r.returncode != 1 or mancanti or presenti:
+                problema = (f"atteso errore {err} (exit 1), non deve esserci {no}; ottenuto exit "
+                            f"{r.returncode}: {r.stderr.strip()[:400]}")
         elif pan is not None:
             if r.returncode != 101 or pan not in r.stderr:
                 problema = f"atteso panico '{pan}' (exit 101), ottenuto exit {r.returncode}: {r.stderr.strip()[:200]}"

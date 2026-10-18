@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Ce++: dal flusso di token all'albero del programma."""
-from lessico import ErroreCe
+from lessico import ErroreCe, ErroriCe
 
 PRIMS = {"i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64", "usize",
          "f32", "f64", "bool", "void"}
@@ -42,6 +42,7 @@ def mostra(x, ind=0, nome=""):
 class Parser:
     def __init__(s, toks):
         s.t, s.i, s.nostruct, s.consts = toks, 0, 0, {}
+        s.errs = []        # errori di sintassi trovati finora (si continua a leggere)
 
     # ----- utilita' -----
     @property
@@ -103,11 +104,52 @@ class Parser:
         return None
 
     # ----- livello superiore -----
+    INIZI = ("funzione", "struttura", "costante", "esterna", "usa")
+
     def programma(s):
         items = []
         while s.tok[0] != "eof":
-            items.append(s.item())
+            i0 = s.i
+            try:
+                items.append(s.item())
+            except ErroreCe as e:
+                s.errs.append(e)
+                s.salta(i0)
+        if s.errs:
+            if len(s.errs) == 1:
+                raise s.errs[0]
+            raise ErroriCe(s.errs[:30])
         return items
+
+    def salta_istr(s):
+        """Dopo un errore dentro un blocco: riparte dopo il prossimo ';' (o alla '}' che chiude)."""
+        depth = 0
+        while s.tok[0] != "eof":
+            k, v, _ = s.tok
+            if k == "op" and v == ";" and depth == 0:
+                s.i += 1
+                return
+            if k == "op" and v == "{":
+                depth += 1
+            elif k == "op" and v == "}":
+                if depth == 0:
+                    return
+                depth -= 1
+            s.i += 1
+
+    def salta(s, i0):
+        """Dopo un errore: riparte dal prossimo elemento di primo livello."""
+        depth, j = 0, i0
+        while s.t[j][0] != "eof":
+            k, v, _ = s.t[j]
+            if k == "op" and v == "{":
+                depth += 1
+            elif k == "op" and v == "}":
+                depth = max(0, depth - 1)
+            elif j > i0 and depth == 0 and k == "kw" and v in s.INIZI:
+                break
+            j += 1
+        s.i = j
 
     def item(s):
         ln = s.tok[2]
@@ -287,7 +329,11 @@ class Parser:
         while not s.is_("}"):
             if s.tok[0] == "eof":
                 s.e("blocco non chiuso: manca '}'")
-            out.append(s.stmt())
+            try:
+                out.append(s.stmt())
+            except ErroreCe as e:
+                s.errs.append(e)
+                s.salta_istr()
         s.i += 1
         s.nostruct = ns
         return out

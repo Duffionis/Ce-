@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Ce++: controllo dei tipi e generazione del C."""
 import copy
-from lessico import ErroreCe
+from lessico import ErroreCe, ErroriCe, ErroreMuto
 from sintassi import N, TESTO, PRIMS, ALIAS_TIPI
 
 SIGNED = {"i8", "i16", "i32", "i64"}
@@ -235,6 +235,9 @@ class Gen:
     def __init__(s, fname):
         s.fname = fname
         s.main = fname
+        s.errori = []     # errori trovati finora (si continua, per riportarne piu' d'uno)
+        s.mute = set()    # nomi di funzioni/tipi gia' in errore: niente errori a catena
+        s.mutev = set()   # nomi di variabili locali gia' in errore (si azzera a ogni funzione)
         s.generics = {}   # nome -> funzione generica (nodo)
         s.bits = {}       # (struttura, campo) -> larghezza in bit (campi a bit)
         s.gstructs = {}   # nome -> struttura generica (nodo)
@@ -338,6 +341,8 @@ class Gen:
         for sc in reversed(s.scopes):
             if name in sc:
                 return sc[name]
+        if name in s.mute or name in s.mutev:
+            raise ErroreMuto()
         s.err(f"nome sconosciuto '{name}'", line)
 
     def declare(s, name, t, mut, line, org=0):
@@ -823,6 +828,8 @@ class Gen:
         if nm in s.generics:
             nm = n.name = s.istanzia(n, hint)
         if nm not in s.funcs:
+            if nm in s.mute:
+                raise ErroreMuto()
             s.err(f"funzione sconosciuta '{nm}'", n.line)
         params, ret, ext = s.funcs[nm]
         if ext and not s.risk:
@@ -849,9 +856,25 @@ class Gen:
         return E(f"{cn}({', '.join(args)})", ret)
 
     # ----- istruzioni -----
+    def registra(s, e):
+        if len(s.errori) < 30:
+            s.errori.append(e)
+
     def st(s, n, ind):
         s.L.append(f'#line {n.line} "{s.cfile}"')
-        getattr(s, "st_" + n.k)(n, ind)
+        snap = (len(s.scopes), s.loops, s.risk, len(s.dframes))
+        riga_c = s.L
+        try:
+            getattr(s, "st_" + n.k)(n, ind)
+        except (ErroreCe, ErroreMuto) as e:
+            if isinstance(e, ErroreCe):
+                s.registra(e)
+            s.L = riga_c
+            del s.scopes[snap[0]:]
+            s.loops, s.risk = snap[1], snap[2]
+            del s.dframes[snap[3]:]
+            if n.k == "var" and not any(n.name in sc for sc in s.scopes):
+                s.mutev.add(n.name)
 
     def cond_code(s, node):
         c = s.ex(node)
@@ -1361,61 +1384,83 @@ class Gen:
                f"static {s.ctype(ret)} f_{s.cid(f.name)}({', '.join(plist) or 'void'}) {{"]
         s.scopes.append({})
         s.dframes = []
+        s.mutev = set()
+        prima = len(s.errori)
         s.stmts(f.body, 1)
         s.scopes.pop()
-        if ret != VOID and not ends(f.body):
+        if ret != VOID and not ends(f.body) and len(s.errori) == prima:
             s.err(f"la funzione '{f.name}' non ritorna un valore su tutti i percorsi", f.line)
         s.L.append("}")
         s.scopes.pop()
         s.corpi += s.L
 
+    def prova(s, f, *a):
+        """Esegue f(*a): se fallisce registra l'errore e va avanti. Ritorna True se e' andata bene."""
+        snap = (len(s.scopes), s.loops, s.risk, len(s.dframes))
+        try:
+            f(*a)
+            return True
+        except (ErroreCe, ErroreMuto) as e:
+            if isinstance(e, ErroreCe):
+                s.registra(e)
+            del s.scopes[snap[0]:]
+            s.loops, s.risk = snap[1], snap[2]
+            del s.dframes[snap[3]:]
+            return False
+
     def programma(s, items):
         for it in items:
             if it.k == "struct" and it.tparams:
                 s.entra(it)
-                s.reg_gstruct(it)
+                s.prova(s.reg_gstruct, it)
         items = [it for it in items if not (it.k == "struct" and it.tparams)]
         for it in items:
             if it.k == "struct":
                 s.entra(it)
                 if it.name in s.structs or it.name in s.gstructs:
-                    s.err(f"la struttura '{it.name}' e' gia' definita", it.line)
+                    s.registra(ErroreCe(f"la struttura '{it.name}' e' gia' definita", it.line, s.cur))
+                    continue
                 s.structs[it.name] = []
         for it in items:
-            if it.k == "struct":
+            if it.k == "struct" and it.name in s.structs and it.name not in s.defined:
                 s.entra(it)
-                it.fields = s.norm(it.fields, it.line)
-                s.def_struct(it)
+                def def_(it=it):
+                    it.fields = s.norm(it.fields, it.line)
+                    s.def_struct(it)
+                if not s.prova(def_):
+                    s.mute.add(it.name)
         for i, it in enumerate(items):
             if (it.k == "fn" and not it.tparams) or it.k == "var":
                 s.entra(it)
-                items[i] = s.norm(it, it.line)
-        for it in items:
-            if it.k == "fn":
-                s.entra(it)
-                if it.tparams:
-                    s.reg_generic(it)
+                r = []
+                if s.prova(lambda: r.append(s.norm(it, it.line))):
+                    items[i] = r[0]
                 else:
-                    s.reg_fn(it)
+                    s.mute.add(it.name)
         for it in items:
-            if it.k == "var":
+            if it.k == "fn" and it.name not in s.mute:
                 s.entra(it)
-                s.glob_const(it)
+                ok = s.prova(s.reg_generic if it.tparams else s.reg_fn, it)
+                if not ok:
+                    s.mute.add(it.name)
         for it in items:
-            if it.k == "fn" and not it.extern and not it.tparams:
+            if it.k == "var" and it.name not in s.mute:
                 s.entra(it)
-                s.gen_fn(it)
+                s.prova(s.glob_const, it)
+        for it in items:
+            if it.k == "fn" and not it.extern and not it.tparams and it.name not in s.mute:
+                s.entra(it)
+                s.prova(s.gen_fn, it)
         while s.pending:
             f = s.pending.pop(0)
             s.entra(f)
-            try:
-                s.gen_fn(f)
-            except ErroreCe as e:
+            prima = len(s.errori)
+            s.prova(s.gen_fn, f)
+            for e in s.errori[prima:]:
                 if " (nell'istanza " not in e.msg:
                     e.msg += f" (nell'istanza {f.desc})"
-                raise
         s.entra(N0)
-        if "principale" not in s.funcs or s.funcs["principale"][2]:
+        if not s.errori and ("principale" not in s.funcs or s.funcs["principale"][2]):
             s.err("manca la funzione 'principale'", 1)
 
     def salida(s):
@@ -1433,5 +1478,12 @@ class Gen:
 
 def genera(items, fname):
     g = Gen(fname)
-    g.programma(items)
+    try:
+        g.programma(items)
+    except ErroreCe as e:        # (es. manca 'principale')
+        g.errori.append(e)
+    if g.errori:
+        if len(g.errori) == 1:
+            raise g.errori[0]
+        raise ErroriCe(g.errori)
     return g.salida()

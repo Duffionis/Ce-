@@ -6,7 +6,7 @@ scrive 'usa'. Tutti i moduli finiscono nello stesso spazio dei nomi: se due
 file definiscono lo stesso nome, e' un errore (niente nascondere).
 """
 import os
-from lessico import ErroreCe, lessico
+from lessico import ErroreCe, ErroriCe, lessico
 from sintassi import analizza
 
 
@@ -26,6 +26,11 @@ def carica_programma(path):
         except ErroreCe as e:
             if e.file is None:
                 e.file = p
+            raise
+        except ErroriCe as ee:
+            for e in ee.errori:
+                if e.file is None:
+                    e.file = p
             raise
         for it in items:
             if it.k != "usa":

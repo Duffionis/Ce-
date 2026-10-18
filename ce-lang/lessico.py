@@ -13,6 +13,17 @@ class ErroreCe(Exception):
         self.msg, self.riga, self.file = msg, riga, file
 
 
+class ErroriCe(Exception):
+    """Piu' errori trovati in un colpo solo (lista di ErroreCe)."""
+    def __init__(self, errori):
+        super().__init__(f"{len(errori)} errori")
+        self.errori = errori
+
+
+class ErroreMuto(Exception):
+    """Errore a catena: dipende da un errore gia' segnalato, quindi non si ripete."""
+
+
 # ===== LESSICO: qui vivono tutte le parole del linguaggio =====
 PAROLE_CHIAVE = {
     "funzione", "struttura", "variabile", "costante", "se", "altrimenti",

@@ -1,0 +1,9 @@
+//! atteso un'espressione
+//! atteso ';'
+//! 2 errori
+funzione a() -> i32 {
+    variabile x: i32 = ;
+    variabile y: i32 = 5
+    ritorna 0;
+}
+funzione principale() -> i32 { ritorna 0; }

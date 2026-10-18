@@ -196,6 +196,13 @@ it there).
 - Fields of a packed struct may be unaligned; reading and writing them is
   fine, but handing them to C code through pointers may not be.
 
+## Error messages
+
+The compiler reports every error it can find in one run (each as
+`file:line: errore: message`, then `N errori`), not just the first one. A
+variable whose declaration failed does not cause a second "unknown name" error
+every time it is used. Errors inside a module name the module's file.
+
 ## Known limits (v0.1, be honest about them)
 
 - Slice lifetime checking is by block level and conservative: it may reject
@@ -205,7 +212,9 @@ it there).
 - Modules are flat (one shared namespace, no `pubblico`/private yet) and the
   map has no removal and only integer keys.
 - Global values can only be numeric/boolean constants.
-- The compiler reports the first error only.
+- Error recovery is simple: after a syntax error the compiler skips to the next
+  `;` or `}`, so a second error right after a first one can occasionally be a
+  consequence of it. At most 30 errors are shown.
 - External C functions use asm labels: tested on Linux.
 
 ## Where things live (and where forks plug in)

@@ -1,0 +1,10 @@
+//! nome sconosciuto 'x'
+//! 2 errori
+funzione a() -> i32 {
+    variabile x: i32 = vero;
+    ritorna 0;
+}
+funzione principale() -> i32 {
+    stampa(x);
+    ritorna 0;
+}

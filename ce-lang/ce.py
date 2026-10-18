@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from lessico import ErroreCe, lessico, VERSIONE
+from lessico import ErroreCe, ErroriCe, lessico, VERSIONE
 from sintassi import mostra
 from modulo import carica_programma
 from genera import genera
@@ -96,6 +96,13 @@ def main(argv):
                 shutil.rmtree(tmp, ignore_errors=True)
     except ErroreCe as e:
         print(f"{e.file or path}:{e.riga}: errore: {e.msg}", file=sys.stderr)
+        return 1
+    except ErroriCe as ee:
+        for e in ee.errori:
+            print(f"{e.file or path}:{e.riga}: errore: {e.msg}", file=sys.stderr)
+        n = len(ee.errori)
+        print(f"{n} errori" + (" (mi fermo qui: ne mostro al massimo 30)" if n >= 30 else ""),
+              file=sys.stderr)
         return 1
     return 0
 
