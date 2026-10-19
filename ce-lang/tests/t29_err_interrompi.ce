@@ -1,5 +1,5 @@
 //! fuori da un ciclo
-funzione principale() -> i32 {
+funzione principale() -> intero {
     interrompi;
     ritorna 0;
 }

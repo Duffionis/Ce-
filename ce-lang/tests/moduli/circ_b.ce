@@ -1,2 +1,2 @@
 usa "circ_a.ce";
-funzione fb() -> i32 { ritorna 2; }
+funzione fb() -> intero { ritorna 2; }

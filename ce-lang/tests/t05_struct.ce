@@ -1,14 +1,14 @@
 //> 25
 //> 6 4
 //> 0 9
-struttura Punto { x: i32, y: i32 }
+struttura Punto { x: intero, y: intero }
 struttura Linea { a: Punto, b: Punto }
-funzione lung2(l: Linea) -> i32 {
-    variabile dx: i32 = l.b.x - l.a.x;
-    variabile dy: i32 = l.b.y - l.a.y;
+funzione lung2(l: Linea) -> intero {
+    variabile dx: intero = l.b.x - l.a.x;
+    variabile dy: intero = l.b.y - l.a.y;
     ritorna dx * dx + dy * dy;
 }
-funzione principale() -> i32 {
+funzione principale() -> intero {
     variabile l = Linea { a: Punto { x: 0, y: 0 }, b: Punto { x: 3, y: 4 } };
     stampa(lung2(l));
     l.b.x = 6;

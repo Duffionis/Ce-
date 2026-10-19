@@ -5,8 +5,8 @@
 //> 1000
 //> 700
 usa "../lib/mappa.ce";
-funzione principale() -> i32 {
-    variabile m: Mappa<i32, i32> = nuova_mappa();
+funzione principale() -> intero {
+    variabile m: Mappa<intero, intero> = nuova_mappa();
     per i in 0..200 {
         m.inserisci(i * 3, i * 10);
     }
@@ -15,7 +15,7 @@ funzione principale() -> i32 {
     stampa(m.contiene(22));
     stampa(m.contiene(21));
     stampa(m.cerca(21).valore_o(-1));
-    variabile somma: i32 = 0;
+    variabile somma: intero = 0;
     per i in 0..200 {
         somma += m.cerca(i * 3).valore_o(0) - i * 10;
     }

@@ -1,2 +1,2 @@
 usa "circ_b.ce";
-funzione fa() -> i32 { ritorna 1; }
+funzione fa() -> intero { ritorna 1; }

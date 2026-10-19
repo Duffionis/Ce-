@@ -6,7 +6,15 @@ PRIMS = {"i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64", "usize",
          "f32", "f64", "bool", "void"}
 ALIAS_TIPI = {"intero": "i32", "lungo": "i64", "corto": "i16", "byte": "u8",
               "carattere": "u8", "decimale": "f32", "doppio": "f64",
-              "booleano": "bool", "vuoto": "void", "dimensione": "usize"}
+              "booleano": "bool", "vuoto": "void", "dimensione": "usize",
+              "intero8": "i8", "intero16": "i16", "intero32": "i32", "intero64": "i64",
+              "naturale8": "u8", "naturale16": "u16", "naturale32": "u32",
+              "naturale64": "u64", "reale32": "f32", "reale64": "f64"}
+# nome italiano con cui i tipi interni compaiono nei messaggi
+NOME_IT = {"i8": "intero8", "i16": "intero16", "i32": "intero", "i64": "lungo",
+           "u8": "byte", "u16": "naturale16", "u32": "naturale32", "u64": "naturale64",
+           "usize": "dimensione", "f32": "decimale", "f64": "doppio",
+           "bool": "booleano", "void": "vuoto"}
 TESTO = ("s", ("p", "u8"))          # testo = fetta di byte
 
 ASSIGN_OPS = {"=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>="}
@@ -289,9 +297,8 @@ class Parser:
             nome = t[1]
             if nome == "testo":
                 return TESTO
-            nome = ALIAS_TIPI.get(nome, nome)
-            if nome in PRIMS:
-                return ("p", nome)
+            if nome in ALIAS_TIPI:
+                return ("p", ALIAS_TIPI[nome])
             if s.acc("<"):
                 args = []
                 while True:

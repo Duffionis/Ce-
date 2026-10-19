@@ -1,2 +1,2 @@
-funzione ok() -> i32 { ritorna 1; }
-funzione male() -> i32 { ritorna vero; }
+funzione ok() -> intero { ritorna 1; }
+funzione male() -> intero { ritorna vero; }

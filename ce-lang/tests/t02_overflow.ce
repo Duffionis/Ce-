@@ -2,17 +2,17 @@
 //> 0
 //> 4294967295
 //> -9223372036854775808
-funzione principale() -> i32 {
-    variabile a: i32 = 2147483647;
+funzione principale() -> intero {
+    variabile a: intero = 2147483647;
     a += 1;
     stampa(a);
-    variabile b: u8 = 255;
+    variabile b: byte = 255;
     b += 1;
     stampa(b);
-    variabile c: u32 = 0;
+    variabile c: naturale32 = 0;
     c -= 1;
     stampa(c);
-    variabile m: i64 = -9223372036854775808;
+    variabile m: lungo = -9223372036854775808;
     stampa(m);
     ritorna 0;
 }

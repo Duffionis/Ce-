@@ -1,13 +1,13 @@
 //> 3628800
 //> Ciao, mondo!
-funzione fatt(n: i64) -> i64 {
+funzione fatt(n: lungo) -> lungo {
     se n <= 1 { ritorna 1; }
     ritorna n * fatt(n - 1);
 }
 funzione saluta(chi: testo) {
     stampa("Ciao, ", chi, "!");
 }
-funzione principale() -> i32 {
+funzione principale() -> intero {
     stampa(fatt(10));
     saluta("mondo");
     ritorna 0;

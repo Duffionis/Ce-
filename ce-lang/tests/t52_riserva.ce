@@ -1,16 +1,16 @@
 //> 5
 //> 10
 //> 0
-struttura Punto { x: i32, y: i32 }
-funzione crea(n: usize) -> [i32] {
-    variabile v: [i32] = riserva(i32, n);
+struttura Punto { x: intero, y: intero }
+funzione crea(n: dimensione) -> [intero] {
+    variabile v: [intero] = riserva(intero, n);
     per i in 0..v.lunghezza {
-        v[i] = (i come i32) * 2 + 2;
+        v[i] = (i come intero) * 2 + 2;
     }
     ritorna v;
 }
-funzione principale() -> i32 {
-    variabile v: [i32] = crea(5);
+funzione principale() -> intero {
+    variabile v: [intero] = crea(5);
     rimanda { rischio { libera(v); } }
     stampa(v.lunghezza);
     stampa(v[4]);

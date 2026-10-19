@@ -3,7 +3,7 @@
 //> fine 1
 //> fine 2
 //> fuori
-funzione principale() -> i32 {
+funzione principale() -> intero {
     per i in 0..4 {
         rimanda stampa("fine ", i);
         se i == 1 { continua; }

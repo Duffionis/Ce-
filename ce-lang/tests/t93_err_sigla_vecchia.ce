@@ -1,0 +1,5 @@
+//! non e' Ce++: si scrive 'intero32'
+funzione principale() -> intero {
+    variabile x: i32 = 3;
+    ritorna 0;
+}

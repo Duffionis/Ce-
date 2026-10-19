@@ -1,7 +1,7 @@
 // Vettore<T>: array che cresce. Possiede memoria dell'heap (riserva/libera).
 //
 //   usa "lib/vettore.ce";
-//   variabile v: Vettore<i32> = Vettore { dati: riserva(i32, 0), n: 0 };
+//   variabile v: Vettore<intero> = Vettore { dati: riserva(intero, 0), n: 0 };
 //   v.aggiungi(5);
 //   stampa(v.valore(0));
 //   v.libera_vettore();
@@ -11,7 +11,7 @@
 
 struttura Vettore<T> {
     dati: [T],
-    n: usize,
+    n: dimensione,
 }
 
 funzione aggiungi<T>(v: &Vettore<T>, x: T) {
@@ -28,7 +28,7 @@ funzione aggiungi<T>(v: &Vettore<T>, x: T) {
     v.n += 1;
 }
 
-funzione valore<T>(v: Vettore<T>, i: usize) -> T {
+funzione valore<T>(v: Vettore<T>, i: dimensione) -> T {
     afferma(i < v.n, "indice fuori dal vettore");
     ritorna v.dati[i];
 }

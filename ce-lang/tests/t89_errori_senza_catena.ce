@@ -1,10 +1,10 @@
-//! tipo diverso: atteso i32, trovato bool
+//! tipo diverso: atteso intero, trovato bool
 //!- nome sconosciuto
 //!- 2 errori
-funzione principale() -> i32 {
-    variabile x: i32 = vero;
+funzione principale() -> intero {
+    variabile x: intero = vero;
     stampa(x);
-    variabile y: i32 = x + 1;
+    variabile y: intero = x + 1;
     stampa(y);
     ritorna 0;
 }

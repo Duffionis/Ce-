@@ -7,9 +7,9 @@ funzione copia<T>(v: [T]) -> [T] {
     }
     ritorna c;
 }
-funzione principale() -> i32 {
-    variabile a: [i32; 3] = [10, 20, 30];
-    variabile c: [i32] = copia(a);
+funzione principale() -> intero {
+    variabile a: [intero; 3] = [10, 20, 30];
+    variabile c: [intero] = copia(a);
     rimanda { rischio { libera(c); } }
     stampa(c[1]);
     stampa(c.lunghezza);

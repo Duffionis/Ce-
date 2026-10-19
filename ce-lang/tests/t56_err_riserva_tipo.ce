@@ -1,5 +1,5 @@
 //! deve essere il nome di un tipo
-funzione principale() -> i32 {
-    variabile v: [i32] = riserva(5, 2);
+funzione principale() -> intero {
+    variabile v: [intero] = riserva(5, 2);
     ritorna 0;
 }

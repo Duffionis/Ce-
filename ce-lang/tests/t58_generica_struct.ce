@@ -1,11 +1,11 @@
 //> 4
 //> 3
-struttura Punto { x: i32, y: i32 }
+struttura Punto { x: intero, y: intero }
 funzione scegli<T>(a: T, b: T, primo: booleano) -> T {
     se primo { ritorna a; }
     ritorna b;
 }
-funzione principale() -> i32 {
+funzione principale() -> intero {
     variabile p: Punto = Punto { x: 1, y: 2 };
     variabile q: Punto = Punto { x: 3, y: 4 };
     stampa(scegli(p, q, falso).y);

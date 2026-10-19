@@ -1,6 +1,6 @@
 //! tipi diversi
-funzione principale() -> i32 {
-    variabile a: i32 = 1;
-    variabile b: i64 = 2;
+funzione principale() -> intero {
+    variabile a: intero = 1;
+    variabile b: lungo = 2;
     ritorna a + b;
 }

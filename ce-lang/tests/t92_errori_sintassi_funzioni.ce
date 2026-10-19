@@ -4,5 +4,5 @@
 funzione a {
     ritorna 0;
 }
-funzione 5() -> i32 { ritorna 0; }
-funzione principale() -> i32 { ritorna 0; }
+funzione 5() -> intero { ritorna 0; }
+funzione principale() -> intero { ritorna 0; }

@@ -1,11 +1,11 @@
 //> pulizia 99
 //> 5
-funzione f() -> i32 {
-    variabile n: i32 = 5;
+funzione f() -> intero {
+    variabile n: intero = 5;
     rimanda { n = 99; stampa("pulizia ", n); }
     ritorna n;
 }
-funzione principale() -> i32 {
+funzione principale() -> intero {
     stampa(f());
     ritorna 0;
 }

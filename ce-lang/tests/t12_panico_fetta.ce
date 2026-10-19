@@ -1,7 +1,7 @@
 //# fetta 0..9
-funzione principale() -> i32 {
-    variabile a: [i32; 3] = [1, 2, 3];
-    variabile n: usize = 9;
+funzione principale() -> intero {
+    variabile a: [intero; 3] = [1, 2, 3];
+    variabile n: dimensione = 9;
     stampa(a[0..n].lunghezza);
     ritorna 0;
 }

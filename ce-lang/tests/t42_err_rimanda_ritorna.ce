@@ -1,5 +1,5 @@
 //! 'ritorna' non e' permesso dentro 'rimanda'
-funzione principale() -> i32 {
+funzione principale() -> intero {
     rimanda { ritorna 1; }
     ritorna 0;
 }

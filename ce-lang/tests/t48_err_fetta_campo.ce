@@ -1,9 +1,9 @@
 //! sopravvivrebbe
-struttura S { f: [i32] }
-funzione principale() -> i32 {
+struttura S { f: [intero] }
+funzione principale() -> intero {
     variabile s: S;
     se vero {
-        variabile a: [i32; 2] = [1, 2];
+        variabile a: [intero; 2] = [1, 2];
         s.f = a[0..1];
     }
     ritorna 0;

@@ -2,7 +2,7 @@
 //> chiusura
 //> due
 //> chiusura
-funzione lavora(x: i32) {
+funzione lavora(x: intero) {
     rimanda stampa("chiusura");
     se x == 1 {
         stampa("uno");
@@ -10,7 +10,7 @@ funzione lavora(x: i32) {
     }
     stampa("due");
 }
-funzione principale() -> i32 {
+funzione principale() -> intero {
     lavora(1);
     lavora(2);
     ritorna 0;

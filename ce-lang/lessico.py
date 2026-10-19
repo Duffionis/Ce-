@@ -43,6 +43,9 @@ INGLESE = {
     "void": "vuoto", "int": "intero", "bool": "booleano",
     "char": "carattere", "float": "decimale", "double": "doppio",
     "string": "testo",
+    "i8": "intero8", "i16": "intero16", "i32": "intero32", "i64": "intero64",
+    "u8": "naturale8", "u16": "naturale16", "u32": "naturale32",
+    "u64": "naturale64", "usize": "dimensione", "f32": "reale32", "f64": "reale64",
 }
 
 TOK = re.compile(r'''
@@ -123,7 +126,7 @@ def lessico(src):
             toks.append(("chr", b[0], riga))
         elif k == "id":
             if t in INGLESE:
-                raise ErroreCe(f"'{t}' e' inglese: in Ce++ si scrive '{INGLESE[t]}'", riga)
+                raise ErroreCe(f"'{t}' non e' Ce++: si scrive '{INGLESE[t]}'", riga)
             toks.append(("kw" if t in PAROLE_CHIAVE else "id", t, riga))
         else:
             toks.append(("op", t, riga))

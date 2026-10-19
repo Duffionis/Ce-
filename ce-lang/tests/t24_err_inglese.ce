@@ -1,5 +1,5 @@
-//! e' inglese
-funzione principale() -> i32 {
+//! non e' Ce++
+funzione principale() -> intero {
     if (1) { }
     ritorna 0;
 }

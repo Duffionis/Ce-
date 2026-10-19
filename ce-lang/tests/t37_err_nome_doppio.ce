@@ -1,4 +1,4 @@
 //! moduli/doppio_b.ce:1: errore: la funzione 'uguale' e' gia' definita
 usa "moduli/doppio_a.ce";
 usa "moduli/doppio_b.ce";
-funzione principale() -> i32 { ritorna 0; }
+funzione principale() -> intero { ritorna 0; }

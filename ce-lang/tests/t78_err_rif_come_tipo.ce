@@ -1,5 +1,5 @@
 //! solo come tipo di un parametro
-funzione principale() -> i32 {
-    variabile x: &i32;
+funzione principale() -> intero {
+    variabile x: &intero;
     ritorna 0;
 }

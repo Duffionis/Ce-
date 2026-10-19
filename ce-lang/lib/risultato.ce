@@ -1,11 +1,11 @@
 // Risultato<T, E>: o un valore (bene) o un errore (male). Niente panico.
 //
 //   usa "lib/risultato.ce";
-//   funzione dividi(a: i32, b: i32) -> Risultato<i32, testo> {
+//   funzione dividi(a: intero, b: intero) -> Risultato<intero, testo> {
 //       se b == 0 { ritorna male("divisione per zero"); }
 //       ritorna bene(a / b);
 //   }
-//   variabile r: Risultato<i32, testo> = dividi(6, 0);
+//   variabile r: Risultato<intero, testo> = dividi(6, 0);
 //   se r.riuscito { stampa(r.valore); } altrimenti { stampa(r.errore); }
 //
 // 'bene(x)' e 'male(e)' prendono l'altro tipo da quello che il risultato deve essere.

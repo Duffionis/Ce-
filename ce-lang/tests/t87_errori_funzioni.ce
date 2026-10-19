@@ -1,16 +1,16 @@
-//! tipo diverso: atteso i32, trovato bool
+//! tipo diverso: atteso intero, trovato bool
 //! la funzione 'b' non ritorna un valore
 //! 'ritorna' non e' permesso dentro 'rimanda'
 //! 3 errori
-funzione a() -> i32 {
-    variabile x: i32 = vero;
+funzione a() -> intero {
+    variabile x: intero = vero;
     ritorna 0;
 }
-funzione b() -> i32 {
+funzione b() -> intero {
     stampa("niente ritorno");
 }
-funzione c() -> i32 {
+funzione c() -> intero {
     rimanda { ritorna 1; }
     ritorna 0;
 }
-funzione principale() -> i32 { ritorna 0; }
+funzione principale() -> intero { ritorna 0; }

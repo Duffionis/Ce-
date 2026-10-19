@@ -1,11 +1,11 @@
 //! nome sconosciuto 'zzz'
 //! 'x' esiste gia'
 //! 2 errori
-funzione principale() -> i32 {
-    variabile x: i32 = 1;
+funzione principale() -> intero {
+    variabile x: intero = 1;
     stampa(zzz);
     se vero {
-        variabile x: i32 = 2;
+        variabile x: intero = 2;
     }
     ritorna 0;
 }

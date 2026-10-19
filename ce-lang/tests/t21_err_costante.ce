@@ -1,6 +1,6 @@
 //! non e' modificabile
-funzione principale() -> i32 {
-    costante a: i32 = 1;
+funzione principale() -> intero {
+    costante a: intero = 1;
     a = 2;
     ritorna 0;
 }

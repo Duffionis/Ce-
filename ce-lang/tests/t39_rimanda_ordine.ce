@@ -3,7 +3,7 @@
 //> corpo
 //> fine 2
 //> fine 1
-funzione principale() -> i32 {
+funzione principale() -> intero {
     rimanda stampa("fine 1");
     rimanda stampa("fine 2");
     {

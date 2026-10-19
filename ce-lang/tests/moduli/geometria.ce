@@ -1,5 +1,5 @@
 usa "comune.ce";
-struttura Punto { x: i32, y: i32 }
-funzione manhattan(p: Punto) -> i32 {
+struttura Punto { x: intero, y: intero }
+funzione manhattan(p: Punto) -> intero {
     ritorna somma(p.x, p.y);
 }

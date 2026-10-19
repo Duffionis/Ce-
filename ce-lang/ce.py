@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Ce++ - uso:
-    ce.py tokens|ast|emit file.ce
-    ce.py build file.ce [-o uscita] [--sanitizza]
-    ce.py run   file.ce [--sanitizza] [argomenti...]"""
+    ce.py simboli|albero|emetti file.ce
+    ce.py compila file.ce [-o uscita] [--sanitizza]
+    ce.py esegui  file.ce [--sanitizza] [argomenti...]
+(i vecchi nomi tokens|ast|emit|build|run funzionano ancora)"""
 import os
 import shutil
 import subprocess
@@ -66,6 +67,10 @@ def main(argv):
     if len(argv) >= 2 and argv[1] == "--version":
         print("Ce++", VERSIONE)
         return 0
+    argv = list(argv)
+    if len(argv) > 1:
+        argv[1] = {"simboli": "tokens", "albero": "ast", "emetti": "emit",
+                   "compila": "build", "esegui": "run"}.get(argv[1], argv[1])
     if len(argv) < 3 or argv[1] not in ("tokens", "ast", "emit", "build", "run"):
         print(__doc__)
         return 2

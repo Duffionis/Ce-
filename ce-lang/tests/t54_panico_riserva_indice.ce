@@ -1,6 +1,6 @@
 //# fuori dai limiti
-funzione principale() -> i32 {
-    variabile v: [i32] = riserva(i32, 3);
+funzione principale() -> intero {
+    variabile v: [intero] = riserva(intero, 3);
     v[3] = 1;
     ritorna 0;
 }

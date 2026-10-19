@@ -1,6 +1,6 @@
 //# scorrimento
-funzione principale() -> i32 {
-    variabile n: i32 = 40;
+funzione principale() -> intero {
+    variabile n: intero = 40;
     stampa(1 << n);
     ritorna 0;
 }

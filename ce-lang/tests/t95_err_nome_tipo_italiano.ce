@@ -1,0 +1,6 @@
+//! tipo diverso: atteso intero, trovato naturale16
+funzione principale() -> intero {
+    variabile x: naturale16 = 3;
+    variabile y: intero = x;
+    ritorna 0;
+}

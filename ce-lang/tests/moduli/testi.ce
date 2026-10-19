@@ -1,4 +1,4 @@
 usa "comune.ce";
-funzione piu_base(n: i32) -> i32 {
+funzione piu_base(n: intero) -> intero {
     ritorna somma(n, BASE);
 }

@@ -1,9 +1,9 @@
 //! atteso un'espressione
 //! atteso ';'
 //! 2 errori
-funzione a() -> i32 {
-    variabile x: i32 = ;
-    variabile y: i32 = 5
+funzione a() -> intero {
+    variabile x: intero = ;
+    variabile y: intero = 5
     ritorna 0;
 }
-funzione principale() -> i32 { ritorna 0; }
+funzione principale() -> intero { ritorna 0; }

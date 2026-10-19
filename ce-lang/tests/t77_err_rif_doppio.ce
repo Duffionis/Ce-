@@ -1,7 +1,7 @@
 //! due volte per riferimento
-funzione scambia(a: &i32, b: &i32) { }
-funzione principale() -> i32 {
-    variabile x: i32 = 1;
+funzione scambia(a: &intero, b: &intero) { }
+funzione principale() -> intero {
+    variabile x: intero = 1;
     scambia(x, x);
     ritorna 0;
 }

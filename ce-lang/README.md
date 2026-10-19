@@ -1,231 +1,251 @@
 # Ce++
 
-A small, safe, all-Italian systems language. It keeps the one good idea of C++
-(your code becomes fast native machine code) and drops the 40 years of baggage.
-Ce++ compiles to C, then gcc/clang optimize it. The whole compiler is a few
-Python files, so it is easy to read, change and fork.
+Un linguaggio di sistema piccolo, sicuro e tutto italiano. Tiene l'unica buona
+idea del C++ (il codice diventa veloce codice macchina nativo) e lascia
+indietro 40 anni di bagaglio. Ce++ compila in C, poi gcc/clang lo ottimizzano.
+L'intero compilatore sono pochi file Python: facile da leggere, modificare e
+fare fork.
 
-    funzione principale() -> i32 {
-        variabile v: [i32; 3] = [10, 20, 30];
+    funzione principale() -> intero {
+        variabile v: [intero; 3] = [10, 20, 30];
         per x in v {
             stampa("valore: ", x);
         }
         ritorna 0;
     }
 
-## Try it
+## Provalo
 
-    python3 ce.py run esempi/ciao.ce          # compile and run
-    python3 ce.py build prog.ce -o prog       # produce an executable
-    python3 ce.py emit prog.ce                # show the generated C
-    python3 ce.py ast prog.ce                 # show the parse tree
-    python3 tests/esegui.py                   # run the test suite
+    python3 ce.py esegui esempi/ciao.ce       # compila ed esegue
+    python3 ce.py compila prog.ce -o prog     # produce un eseguibile
+    python3 ce.py emetti prog.ce              # mostra il C generato
+    python3 ce.py albero prog.ce              # mostra l'albero sintattico
+    python3 tests/esegui.py                   # esegue i test
 
-Needs Python 3 and gcc or clang (GNU C extensions are used).
-Set `CC=clang` to pick a compiler. Add `--sanitizza` to build with
-AddressSanitizer + UBSan (useful once you use `rischio`).
+Servono Python 3 e gcc o clang (si usano estensioni GNU C).
+Imposta `CC=clang` per scegliere il compilatore. Aggiungi `--sanitizza` per
+compilare con AddressSanitizer + UBSan (utile quando usi `rischio`).
+I vecchi nomi dei comandi (`run`, `build`, `emit`, `ast`, `tokens`) funzionano
+ancora.
 
-## The language
+## Il linguaggio
 
-Keywords: `funzione struttura variabile costante se altrimenti mentre per in
-ritorna interrompi continua vero falso rischio esterna come usa rimanda`.
-English keywords (`if`, `while`, `return`, ...) are rejected with a hint
-("'if' e' inglese: in Ce++ si scrive 'se'").
+Parole chiave: `funzione struttura variabile costante se altrimenti mentre per
+in ritorna interrompi continua vero falso rischio esterna come usa rimanda
+impacchettata`. Le parole inglesi (`if`, `while`, `return`, ...) vengono
+rifiutate con un suggerimento ("'if' non e' Ce++: si scrive 'se'").
 
-Types: `i8 i16 i32 i64 u8 u16 u32 u64 f32 f64` plus Italian aliases
-`intero`(i32) `lungo`(i64) `corto`(i16) `byte`/`carattere`(u8) `decimale`(f32)
-`doppio`(f64) `booleano` `vuoto` `dimensione`(usize) and `testo` (a slice of
-bytes). Arrays are `[T; N]`, slices are `[T]`, raw pointers are `*T`.
+Tipi, tutti con nome italiano:
 
-Built-ins: `stampa(...)` (with newline), `scrivi(...)`, `panico("msg")`,
-`afferma(cond, "msg")`, and `.lunghezza` on arrays and slices.
-`riserva(T, n)` allocates `n` zeroed values of type `T` on the heap and gives
-a slice (`variabile v: [i32] = riserva(i32, 10);`; it panics if memory runs
-out). `libera(v)` frees it and empties `v`; it only works inside `rischio`,
-because the compiler cannot check that the slice came from `riserva` or that
-nothing else still points to it. Pair them with `rimanda`:
+| tipo | significato | sinonimi |
+|---|---|---|
+| `intero8` `intero16` `intero32` `intero64` | interi con segno | `corto` = `intero16`, `intero` = `intero32`, `lungo` = `intero64` |
+| `naturale8` `naturale16` `naturale32` `naturale64` | interi senza segno | `byte` e `carattere` = `naturale8` |
+| `dimensione` | dimensione di un oggetto (come `size_t`) | |
+| `reale32` `reale64` | numeri in virgola mobile | `decimale` = `reale32`, `doppio` = `reale64` |
+| `booleano` `vuoto` | vero/falso, nessun valore | |
+| `testo` | fetta di byte | |
 
-    variabile v: [i32] = riserva(i32, 10);
+Le vecchie sigle in stile Rust (`i32`, `u8`, `f64`, `usize`...) non esistono:
+il compilatore le rifiuta e dice quale nome usare. Gli array sono `[T; N]`, le
+fette `[T]`, i puntatori grezzi `*T`.
+
+Funzioni integrate: `stampa(...)` (con a capo), `scrivi(...)`,
+`panico("msg")`, `afferma(cond, "msg")`, e `.lunghezza` su array e fette.
+`riserva(T, n)` alloca `n` valori azzerati di tipo `T` sull'heap e restituisce
+una fetta (`variabile v: [intero] = riserva(intero, 10);`; va in panico se la
+memoria finisce). `libera(v)` la libera e svuota `v`; funziona solo dentro
+`rischio`, perche' il compilatore non puo' verificare che la fetta venga da
+`riserva` o che nient'altro la usi ancora. Abbinale a `rimanda`:
+
+    variabile v: [intero] = riserva(intero, 10);
     rimanda { rischio { libera(v); } }
 
-Heap slices can be returned from functions. Use after `libera` through a copy
-of the slice is not detected (known limit below).
+Le fette dell'heap si possono restituire dalle funzioni. L'uso dopo `libera`
+tramite una copia della fetta non viene rilevato (vedi i limiti).
 
-## What is enforced today
+## Cosa viene garantito oggi
 
-- Variables are always initialized (to zero if you give no value).
-- Integer overflow is defined: it wraps (never undefined behavior).
-- Array and slice indexing is always bounds-checked; failures are a clean
-  `panico` (exit code 101), not memory corruption.
-- Division by zero and over-wide shifts are checked.
-- No implicit numeric conversions: use `come`. Float to int saturates.
-- Names cannot be shadowed. Loop variables cannot be modified.
-- `costante` and function parameters are immutable.
-- Every code path of a non-void function must return.
-- Raw pointers (`&`, `*`) and calling C functions (`esterna`) only work
-  inside a `rischio { }` block.
-- Slices cannot outlive the data they point to. Every slice (also inside a
-  struct) remembers the block its data lives in: assigning it to something
-  that lives longer is an error, and a function can only return slices (or
-  structs holding slices) that point to its parameters or to string literals.
+- Le variabili sono sempre inizializzate (a zero se non dai un valore).
+- L'overflow degli interi e' definito: va a capo (mai comportamento indefinito).
+- L'indicizzazione di array e fette controlla sempre i limiti; un errore e'
+  un `panico` pulito (codice di uscita 101), non corruzione della memoria.
+- Divisione per zero e scorrimenti troppo larghi sono controllati.
+- Nessuna conversione numerica implicita: usa `come`. Da reale a intero satura.
+- I nomi non si possono nascondere (niente shadowing). Le variabili dei cicli
+  non si modificano.
+- `costante` e i parametri delle funzioni sono immutabili.
+- Ogni percorso di una funzione non `vuoto` deve ritornare.
+- I puntatori grezzi (`&`, `*`) e le chiamate a funzioni C (`esterna`)
+  funzionano solo dentro un blocco `rischio { }`.
+- Le fette non possono sopravvivere ai dati a cui puntano. Ogni fetta (anche
+  dentro una struttura) ricorda il blocco in cui vivono i suoi dati:
+  assegnarla a qualcosa che vive di piu' e' un errore, e una funzione puo'
+  restituire solo fette (o strutture con fette) che puntano ai suoi parametri
+  o a letterali di testo.
 
-## Modules
+## Moduli
 
-    usa "geometria.ce";      // at the top level, path relative to this file
+    usa "geometria.ce";      // al livello alto, percorso relativo a questo file
 
-Each file is loaded once (diamond imports are fine), imports can nest, and
-circular imports are an error. All modules share one namespace: two files
-defining the same name is an error (no shadowing, as everywhere in Ce++).
-Errors and `panico` messages name the file and line of the module they come from.
+Ogni file viene caricato una volta sola (gli import a diamante vanno bene), gli
+import possono annidarsi e quelli circolari sono un errore. Tutti i moduli
+condividono un solo spazio dei nomi: due file che definiscono lo stesso nome
+sono un errore (niente shadowing, come ovunque in Ce++). Errori e messaggi di
+`panico` indicano file e riga del modulo di origine.
 
-## Cleanup with `rimanda`
+## Pulizia con `rimanda`
 
     variabile f: *Fle = apri(...);
-    rimanda chiudi(f);        // runs when the enclosing block exits
+    rimanda chiudi(f);        // gira quando il blocco che lo contiene finisce
 
-`rimanda <statement>` (or `rimanda { ... }`) runs when the enclosing block
-ends: at the closing `}`, or earlier through `ritorna`, `interrompi` or
-`continua`. Several `rimanda` in one block run in reverse order (last first).
-Rules:
+`rimanda <istruzione>` (o `rimanda { ... }`) gira quando il blocco che lo
+contiene termina: alla `}` finale, o prima con `ritorna`, `interrompi` o
+`continua`. Piu' `rimanda` nello stesso blocco girano in ordine inverso
+(l'ultimo per primo). Regole:
 
-- Only the `rimanda` already reached at the exit point run (an early `ritorna`
-  before a `rimanda` line does not run it).
-- A returned value is computed before the deferred code runs.
-- Deferred code reads variables when it runs, not when it was written.
-- It cannot contain `ritorna`, or `interrompi`/`continua` that would leave it,
-  and cannot contain another `rimanda`.
-- `panico` stops the program immediately (exit 101) and does not run them.
+- Girano solo i `rimanda` gia' raggiunti nel punto di uscita (un `ritorna`
+  anticipato prima di una riga `rimanda` non la esegue).
+- Il valore restituito viene calcolato prima del codice rimandato.
+- Il codice rimandato legge le variabili quando gira, non quando e' scritto.
+- Non puo' contenere `ritorna`, ne' `interrompi`/`continua` che lo
+  abbandonerebbero, ne' un altro `rimanda`.
+- `panico` ferma subito il programma (uscita 101) e non li esegue.
 
-## Generic functions
+## Funzioni generiche
 
     funzione massimo<T>(a: T, b: T) -> T {
         se a > b { ritorna a; }
         ritorna b;
     }
-    stampa(massimo(3, 7));        // T = i32
-    stampa(massimo(x, 7));        // x: i64 -> T = i64
+    stampa(massimo(3, 7));        // T = intero
+    stampa(massimo(x, 7));        // x: lungo -> T = lungo
 
-Write the function once, use it for any type. The compiler works out `T` from
-the arguments (typed values first, then number literals, which take the type
-already found) and generates one real function per type, so there is no
-runtime cost. `T` can also be used inside the body (`variabile s: T`,
-`riserva(T, n)`). Errors inside an instance say which types caused them.
+Scrivi la funzione una volta, usala per qualsiasi tipo. Il compilatore ricava
+`T` dagli argomenti (prima i valori con tipo, poi i numeri letterali, che
+prendono il tipo gia' trovato) e genera una funzione vera per ogni tipo,
+quindi nessun costo a runtime. `T` si puo' usare anche nel corpo
+(`variabile s: T`, `riserva(T, n)`). Gli errori dentro un'istanza dicono
+quali tipi li hanno causati.
 
-- A generic function is only checked when it is used: an unused one is not
-  type-checked.
-- If `T` cannot be worked out from the arguments, the compiler tries the type
-  you declared for the result (`variabile v: [i32] = crea(3);`). Otherwise
-  write it: `crea<i32>(3)`.
+- Una funzione generica viene controllata solo quando e' usata.
+- Se `T` non si ricava dagli argomenti, il compilatore prova con il tipo
+  dichiarato per il risultato (`variabile v: [intero] = crea(3);`). Altrimenti
+  scrivilo: `crea<intero>(3)`.
 
-## Generic structs and `lib/vettore.ce`
+## Strutture generiche e `lib/vettore.ce`
 
     struttura Coppia<A, B> { primo: A, secondo: B }
-    variabile c: Coppia<i32, f64> = Coppia { primo: 1, secondo: 2.5 };
+    variabile c: Coppia<intero, doppio> = Coppia { primo: 1, secondo: 2.5 };
 
-`Coppia<i32, f64>` is a real struct generated for those types. In a literal
-the compiler takes the types from the declared type, or from the fields
-(`Coppia { primo: 1, secondo: 2.5 }` inside `apri(...)`). Generic structs can
-be passed to generic functions (`funzione scambia<A, B>(c: Coppia<A, B>) ->
-Coppia<B, A>`) and nested (`Coppia<i32, Coppia<i32, i32>>`).
+`Coppia<intero, doppio>` e' una struttura vera generata per quei tipi. In un
+letterale il compilatore prende i tipi dal tipo dichiarato o dai campi. Le
+strutture generiche si passano a funzioni generiche
+(`funzione scambia<A, B>(c: Coppia<A, B>) -> Coppia<B, A>`) e si annidano
+(`Coppia<intero, Coppia<intero, intero>>`).
 
-`lib/vettore.ce` is a growable vector written in Ce++ itself on top of
+`lib/vettore.ce` e' un vettore dinamico scritto in Ce++ stesso sopra
 `riserva`/`libera`:
 
     usa "lib/vettore.ce";
-    variabile v: Vettore<i32> = Vettore { dati: riserva(i32, 0), n: 0 };
-    v.aggiungi(5);                 // same as aggiungi(v, 5)
-    stampa(v.valore(0));           // bounds-checked
+    variabile v: Vettore<intero> = Vettore { dati: riserva(intero, 0), n: 0 };
+    v.aggiungi(5);                 // come aggiungi(v, 5)
+    stampa(v.valore(0));           // con controllo dei limiti
     v.libera_vettore();
 
-Struct fields used by value must still be defined before they are used
-(put the plain structs first).
+I campi struttura usati per valore devono comunque essere definiti prima di
+essere usati (metti prima le strutture semplici).
 
-## Reference parameters and `v.f(x)`
+## Parametri per riferimento e `v.f(x)`
 
-    funzione incrementa(x: &i32) { x = x + 1; }
-    variabile a: i32 = 10;
-    incrementa(a);                 // a is now 11
+    funzione incrementa(x: &intero) { x = x + 1; }
+    variabile a: intero = 10;
+    incrementa(a);                 // ora a vale 11
 
-A parameter of type `&T` receives the caller's variable itself, so the
-function can change it. Calling is plain (`incrementa(a)`): the argument must
-be a mutable variable, field or element. References are only allowed as
-function parameters: they cannot be stored, returned or kept in variables, so
-they can never outlive what they point to. Extra checks: the same variable
-cannot be passed twice by reference, and a short-lived slice cannot be passed
-alongside a reference to something that lives longer (the function could store
-it there).
+Un parametro di tipo `&T` riceve la variabile stessa di chi chiama, quindi la
+funzione puo' modificarla. La chiamata e' semplice (`incrementa(a)`): l'argomento
+deve essere una variabile, un campo o un elemento modificabile. I riferimenti
+sono ammessi solo come parametri: non si possono memorizzare, restituire o
+tenere in variabili, quindi non sopravvivono mai a cio' a cui puntano. Altri
+controlli: la stessa variabile non si passa due volte per riferimento, e una
+fetta di vita breve non si passa insieme a un riferimento a qualcosa che vive
+di piu' (la funzione potrebbe salvarcela).
 
-`x.f(y)` is another way to write `f(x, y)`, for any function. That is how
-`v.aggiungi(5)` works: there are no classes or `impl` blocks, only functions.
+`x.f(y)` e' un altro modo di scrivere `f(x, y)`, per qualsiasi funzione. Cosi'
+funziona `v.aggiungi(5)`: niente classi o blocchi `impl`, solo funzioni.
 
-## Standard library (`lib/`, written in Ce++)
+## Libreria standard (`lib/`, scritta in Ce++)
 
-| file | gives you |
+| file | cosa offre |
 |---|---|
-| `vettore.ce` | `Vettore<T>`: growable array (`aggiungi`, `valore`, `libera_vettore`) |
-| `opzione.ce` | `Opzione<T>`: a value that may be missing (`qualcuno`, `nessuno`, `valore_o`, `valore_certo`) |
-| `risultato.ce` | `Risultato<T, E>`: a value or an error, no panic (`bene`, `male`) |
-| `mappa.ce` | `Mappa<K, V>`: hash map, integer keys (`nuova_mappa`, `inserisci`, `cerca`, `contiene`, `libera_mappa`) |
+| `vettore.ce` | `Vettore<T>`: array dinamico (`aggiungi`, `valore`, `libera_vettore`) |
+| `opzione.ce` | `Opzione<T>`: un valore che puo' mancare (`qualcuno`, `nessuno`, `valore_o`, `valore_certo`) |
+| `risultato.ce` | `Risultato<T, E>`: un valore o un errore, senza panico (`bene`, `male`) |
+| `mappa.ce` | `Mappa<K, V>`: tabella hash, chiavi intere (`nuova_mappa`, `inserisci`, `cerca`, `contiene`, `libera_mappa`) |
 
     usa "lib/mappa.ce";
-    variabile m: Mappa<i32, i32> = nuova_mappa();
+    variabile m: Mappa<intero, intero> = nuova_mappa();
     m.inserisci(7, 70);
     stampa(m.cerca(7).valore_o(-1));    // 70
     m.libera_mappa();
 
-`Mappa` has no removal yet and only integer keys (it hashes `k come u64`).
+`Mappa` non ha ancora la rimozione e accetta solo chiavi intere (calcola
+l'hash di `k come naturale64`).
 
-## Exact layouts: `impacchettata`, bit fields, `misura`
+## Disposizione esatta: `impacchettata`, campi a bit, `misura`
 
     struttura Registro impacchettata {
-        modo: u8 : 3,          // 3 bits
-        attivo: booleano : 1,  // 1 bit
-        dato: u16 : 12,        // 12 bits  -> the whole struct is 2 bytes
+        modo: byte : 3,          // 3 bit
+        attivo: booleano : 1,    // 1 bit
+        dato: naturale16 : 12,   // 12 bit -> tutta la struttura e' di 2 byte
     }
-    stampa(misura(Registro));  // size in bytes: 2
+    stampa(misura(Registro));    // dimensione in byte: 2
 
-- `: N` after a field type makes it an `N`-bit field. Allowed types: `u8 u16
-  u32 u64 booleano` (unsigned only, so there is no implementation-defined
-  sign handling). Writing a constant that does not fit is a compile error;
-  other values wrap to `N` bits like all Ce++ integers.
-- A bit field has no address: `&campo` is an error.
-- `impacchettata` removes the padding between fields. Without it the struct
-  is laid out like C. Bit order inside a byte follows gcc/clang (first field =
-  lowest bits on little-endian machines such as x86 and ARM).
-- `misura(T)` gives `sizeof` for a struct or basic type, to check layouts.
-- Fields of a packed struct may be unaligned; reading and writing them is
-  fine, but handing them to C code through pointers may not be.
+- `: N` dopo il tipo di un campo lo rende un campo di `N` bit. Tipi ammessi:
+  `byte naturale16 naturale32 naturale64 booleano` (solo senza segno, cosi'
+  non c'e' gestione del segno dipendente dall'implementazione). Scrivere una
+  costante che non ci sta e' un errore di compilazione; gli altri valori
+  vanno a capo su `N` bit come tutti gli interi di Ce++.
+- Un campo a bit non ha indirizzo: `&campo` e' un errore.
+- `impacchettata` toglie il riempimento tra i campi. Senza, la struttura e'
+  disposta come in C. L'ordine dei bit in un byte segue gcc/clang (primo campo
+  = bit piu' bassi su macchine little-endian come x86 e ARM).
+- `misura(T)` da' `sizeof` di una struttura o di un tipo base.
+- I campi di una struttura impacchettata possono essere non allineati; leggerli
+  e scriverli va bene, ma passarli a codice C tramite puntatori potrebbe no.
 
-## Error messages
+## Messaggi di errore
 
-The compiler reports every error it can find in one run (each as
-`file:line: errore: message`, then `N errori`), not just the first one. A
-variable whose declaration failed does not cause a second "unknown name" error
-every time it is used. Errors inside a module name the module's file.
+Il compilatore segnala tutti gli errori che trova in una sola esecuzione
+(ognuno come `file:riga: errore: messaggio`, poi `N errori`), non solo il
+primo. Una variabile la cui dichiarazione e' fallita non causa un secondo
+errore "nome sconosciuto" a ogni uso. Gli errori dentro un modulo indicano il
+file del modulo. I tipi nei messaggi hanno nomi italiani.
 
-## Known limits (v0.1, be honest about them)
+## Limiti noti (v0.1, onesti)
 
-- Slice lifetime checking is by block level and conservative: it may reject
-  some code that would be safe, and it does not follow raw pointers (`rischio`).
-- Heap memory is manual: forgetting `libera` leaks, and using a copy of a slice
-  after `libera` is not caught. `riserva` takes only a plain type name.
-- Modules are flat (one shared namespace, no `pubblico`/private yet) and the
-  map has no removal and only integer keys.
-- Global values can only be numeric/boolean constants.
-- Error recovery is simple: after a syntax error the compiler skips to the next
-  `;` or `}`, so a second error right after a first one can occasionally be a
-  consequence of it. At most 30 errors are shown.
-- External C functions use asm labels: tested on Linux.
+- Il controllo della vita delle fette e' a livello di blocco e prudente: puo'
+  rifiutare codice che sarebbe sicuro, e non segue i puntatori grezzi (`rischio`).
+- La memoria dell'heap e' manuale: dimenticare `libera` perde memoria, e usare
+  una copia di una fetta dopo `libera` non viene rilevato. `riserva` accetta
+  solo un semplice nome di tipo.
+- I moduli sono piatti (un solo spazio dei nomi, ancora niente `pubblico`/privato)
+  e la mappa non ha rimozione e solo chiavi intere.
+- I valori globali possono essere solo costanti numeriche/booleane.
+- Il recupero dopo gli errori e' semplice: dopo un errore di sintassi il
+  compilatore salta al prossimo `;` o `}`, quindi un secondo errore subito dopo
+  il primo puo' a volte esserne una conseguenza. Si mostrano al massimo 30 errori.
+- Le funzioni C esterne usano etichette asm: provato su Linux.
 
-## Where things live (and where forks plug in)
+## Dove sta cosa (e dove si agganciano i fork)
 
-    lessico.py   words, keywords, lexer          -> change the vocabulary here
-    sintassi.py  grammar and parse tree           -> change the syntax here
-    genera.py    type rules, safety checks, C     -> change semantics/backend here
-    ce.py        command line driver
-    tests/       one .ce file per rule, expectations in comments
+    lessico.py   parole, parole chiave, lessico   -> cambia qui il vocabolario
+    sintassi.py  grammatica e albero              -> cambia qui la sintassi
+    genera.py    regole dei tipi, controlli, C    -> cambia qui semantica/backend
+    ce.py        programma da riga di comando
+    tests/       un file .ce per regola, attese nei commenti
 
-## Ideas for later
+## Idee per dopo
 
-Private names / `pubblico`, explicit endianness, map removal and text keys,
-a direct backend instead of C.
+Nomi privati / `pubblico`, endianness esplicita, rimozione dalla mappa e chiavi
+di testo, un backend diretto al posto del C.

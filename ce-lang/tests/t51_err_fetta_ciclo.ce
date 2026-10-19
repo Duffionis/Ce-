@@ -1,8 +1,8 @@
 //! sopravvivrebbe
-funzione principale() -> i32 {
-    variabile v: [i32];
+funzione principale() -> intero {
+    variabile v: [intero];
     per i in 0..3 {
-        variabile a: [i32; 1] = [1];
+        variabile a: [intero; 1] = [1];
         v = a[0..1];
     }
     ritorna 0;

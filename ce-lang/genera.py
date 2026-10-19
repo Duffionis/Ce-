@@ -2,7 +2,7 @@
 """Ce++: controllo dei tipi e generazione del C."""
 import copy
 from lessico import ErroreCe, ErroriCe, ErroreMuto
-from sintassi import N, TESTO, PRIMS, ALIAS_TIPI
+from sintassi import N, TESTO, PRIMS, ALIAS_TIPI, NOME_IT
 
 SIGNED = {"i8", "i16", "i32", "i64"}
 UNSIGNED = {"u8", "u16", "u32", "u64", "usize"}
@@ -38,7 +38,9 @@ def tstr(t):
     if t == TESTO:
         return "testo"
     k = t[0]
-    if k in ("p", "st"):
+    if k == "p":
+        return NOME_IT.get(t[1], t[1])
+    if k == "st":
         return t[1]
     if k == "ptr":
         return "*" + tstr(t[1])
@@ -383,7 +385,7 @@ class Gen:
         return False
 
     def nome_tipo(s, n):
-        """Il tipo scritto come argomento di 'riserva' (solo nomi: i32, intero, Punto, testo)."""
+        """Il tipo scritto come argomento di 'riserva' (solo nomi: intero, Punto, testo)."""
         if n.k == "id":
             nm = n.name
             if nm == "testo":
@@ -396,7 +398,7 @@ class Gen:
                 return ("p", "bool")
             if nm in s.structs:
                 return ("st", nm)
-        s.err("il primo argomento di 'riserva' deve essere il nome di un tipo (i32, intero, Punto...)", n.line)
+        s.err("il primo argomento di 'riserva' deve essere il nome di un tipo (intero, byte, Punto...)", n.line)
 
     # ----- durata dei dati a cui puntano le fette -----
     # Ogni blocco ha un livello (len(s.scopes)); i dati di una variabile vivono
@@ -801,7 +803,7 @@ class Gen:
             return E(f"({{ ce_s_u8 _m{u} = {m}; if (!({c.c})) ce_panic_msg(_m{u}.ptr, _m{u}.len, {n.line}); }})", VOID)
         if nm == "riserva":
             if len(n.args) != 2:
-                s.err("'riserva' vuole un tipo e una quantita': riserva(i32, 10)", n.line)
+                s.err("'riserva' vuole un tipo e una quantita': riserva(intero, 10)", n.line)
             t = s.nome_tipo(n.args[0])
             st = ("s", t)
             cnt = s.coerce(n.args[1], USIZE, False)
@@ -1127,7 +1129,7 @@ class Gen:
                 parts.append(f"{s.ctype(f.ty)} m_{s.cid(f.name)};")
             else:
                 if f.ty[0] != "p" or f.ty[1] not in ("u8", "u16", "u32", "u64", "bool"):
-                    s.err("i campi a bit possono essere solo u8, u16, u32, u64 o booleano", f.line)
+                    s.err("i campi a bit possono essere solo byte, naturale16, naturale32, naturale64 o booleano", f.line)
                 lim = 1 if f.ty[1] == "bool" else BITS[f.ty[1]]
                 if not 1 <= w <= lim:
                     s.err(f"un campo {tstr(f.ty)} puo' avere da 1 a {lim} bit, non {w}", f.line)
@@ -1203,7 +1205,7 @@ class Gen:
         return nome
 
     def norm_tipo(s, t, line):
-        """Trasforma i tipi generici concreti (Vettore<i32>) nelle strutture vere."""
+        """Trasforma i tipi generici concreti (Vettore<intero>) nelle strutture vere."""
         k = t[0]
         if k == "g":
             if t[1] not in s.gstructs:
@@ -1341,7 +1343,7 @@ class Gen:
         s.check_type(f.ret, f.line, False)
         if f.name == "principale":
             if params or f.ret not in (I32, VOID):
-                s.err("'principale' deve essere: funzione principale() -> i32", f.line)
+                s.err("'principale' deve essere: funzione principale() -> intero", f.line)
         s.funcs[f.name] = (params, f.ret, f.extern)
         ct = ", ".join(s.ctype(pt) for _, pt in params) or "void"
         if f.extern:

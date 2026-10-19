@@ -1,6 +1,6 @@
 //! funzione C
-esterna funzione puts(s: *carattere) -> i32;
-funzione principale() -> i32 {
+esterna funzione puts(s: *carattere) -> intero;
+funzione principale() -> intero {
     puts("x" come *carattere);
     ritorna 0;
 }

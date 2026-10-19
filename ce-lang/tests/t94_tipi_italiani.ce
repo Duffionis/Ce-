@@ -1,0 +1,12 @@
+//> 720065000400000000091.52.5
+funzione principale() -> intero {
+    variabile a: intero8 = 7;
+    variabile b: naturale8 = 200;
+    variabile c: naturale16 = 65000;
+    variabile d: naturale32 = 4000000000;
+    variabile e: intero64 = 9;
+    variabile f: reale32 = 1.5;
+    variabile g: reale64 = 2.5;
+    stampa(a, b, c, d, e, f, g);
+    ritorna 0;
+}

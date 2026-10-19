@@ -1,6 +1,6 @@
 //! dati locali
-funzione f() -> [i32] {
-    variabile a: [i32; 2] = [1, 2];
+funzione f() -> [intero] {
+    variabile a: [intero; 2] = [1, 2];
     ritorna a[0..1];
 }
-funzione principale() -> i32 { ritorna 0; }
+funzione principale() -> intero { ritorna 0; }

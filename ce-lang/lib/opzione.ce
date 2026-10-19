@@ -1,8 +1,8 @@
 // Opzione<T>: un valore che puo' mancare (al posto di un valore speciale).
 //
 //   usa "lib/opzione.ce";
-//   variabile o: Opzione<i32> = qualcuno(5);     // c'e'
-//   variabile v: Opzione<i32> = nessuno();       // non c'e' (il tipo viene dalla dichiarazione)
+//   variabile o: Opzione<intero> = qualcuno(5);     // c'e'
+//   variabile v: Opzione<intero> = nessuno();       // non c'e' (il tipo viene dalla dichiarazione)
 //   se o.c_e { stampa(o.valore); }
 //   stampa(o.valore_o(0));                        // valore, oppure 0 se manca
 //   stampa(valore_certo(o));                      // panico se manca

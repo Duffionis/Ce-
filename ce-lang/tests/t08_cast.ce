@@ -1,11 +1,11 @@
 //> 44 600 3 -1
 //> 2147483647 -2147483648
 //> 3.5
-funzione principale() -> i32 {
-    variabile a: i32 = 300;
-    stampa(a come u8, " ", a come i64 * 2, " ", 3.99 come i32, " ", -1.5 come i32);
-    stampa(1e20 come i32, " ", -1e20 come i32);
-    variabile f: f64 = 7;
+funzione principale() -> intero {
+    variabile a: intero = 300;
+    stampa(a come byte, " ", a come lungo * 2, " ", 3.99 come intero, " ", -1.5 come intero);
+    stampa(1e20 come intero, " ", -1e20 come intero);
+    variabile f: doppio = 7;
     stampa(f / 2);
     ritorna 0;
 }

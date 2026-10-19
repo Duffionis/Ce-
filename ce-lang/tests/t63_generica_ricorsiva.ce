@@ -3,8 +3,8 @@ funzione fatt<T>(n: T) -> T {
     se n <= 1 { ritorna 1; }
     ritorna n * fatt(n - 1);
 }
-funzione principale() -> i32 {
-    variabile n: i64 = 5;
+funzione principale() -> intero {
+    variabile n: lungo = 5;
     stampa(fatt(n));
     ritorna 0;
 }

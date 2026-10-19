@@ -1,1 +1,1 @@
-funzione uguale() -> i32 { ritorna 1; }
+funzione uguale() -> intero { ritorna 1; }

@@ -1,4 +1,4 @@
-costante BASE: i32 = 100;
-funzione somma(a: i32, b: i32) -> i32 {
+costante BASE: intero = 100;
+funzione somma(a: intero, b: intero) -> intero {
     ritorna a + b;
 }

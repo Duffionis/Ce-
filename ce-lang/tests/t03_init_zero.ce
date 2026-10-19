@@ -1,8 +1,8 @@
 //> 0 000 0 0 falso
-struttura P { x: i32, y: f64, ok: booleano }
-funzione principale() -> i32 {
-    variabile n: i32;
-    variabile a: [i32; 3];
+struttura P { x: intero, y: doppio, ok: booleano }
+funzione principale() -> intero {
+    variabile n: intero;
+    variabile a: [intero; 3];
     variabile p: P;
     stampa(n, " ", a[0], a[1], a[2], " ", p.x, " ", p.y, " ", p.ok);
     ritorna 0;

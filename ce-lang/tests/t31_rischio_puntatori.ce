@@ -1,6 +1,6 @@
 //> 42
-funzione principale() -> i32 {
-    variabile x: i32 = 5;
+funzione principale() -> intero {
+    variabile x: intero = 5;
     rischio {
         variabile p = &x;
         *p = 42;

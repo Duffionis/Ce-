@@ -1,8 +1,8 @@
 //! non riesco a capire il tipo generico 'T'
-funzione crea<T>(n: usize) -> [T] {
+funzione crea<T>(n: dimensione) -> [T] {
     ritorna riserva(T, n);
 }
-funzione principale() -> i32 {
+funzione principale() -> intero {
     stampa(crea(3).lunghezza);
     ritorna 0;
 }

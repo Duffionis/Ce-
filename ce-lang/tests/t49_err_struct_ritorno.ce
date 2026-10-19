@@ -1,7 +1,7 @@
 //! dati locali
-struttura S { f: [i32] }
+struttura S { f: [intero] }
 funzione crea() -> S {
-    variabile a: [i32; 2] = [1, 2];
+    variabile a: [intero; 2] = [1, 2];
     ritorna S { f: a[0..1] };
 }
-funzione principale() -> i32 { ritorna 0; }
+funzione principale() -> intero { ritorna 0; }

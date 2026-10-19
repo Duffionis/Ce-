@@ -4,7 +4,7 @@
 usa "moduli/geometria.ce";
 usa "moduli/testi.ce";
 usa "moduli/comune.ce";
-funzione principale() -> i32 {
+funzione principale() -> intero {
     variabile p: Punto = Punto { x: 3, y: 4 };
     stampa(manhattan(p));
     stampa(piu_base(7));

@@ -3,7 +3,7 @@
 //> vero
 //> 1000
 //> 6
-funzione principale() -> i32 {
+funzione principale() -> intero {
     variabile r: Registro = Registro { modo: 5, attivo: vero, dato: 1000 };
     stampa(misura(Registro));
     stampa(r.modo);
@@ -14,7 +14,7 @@ funzione principale() -> i32 {
     ritorna 0;
 }
 struttura Registro impacchettata {
-    modo: u8 : 3,
+    modo: byte : 3,
     attivo: booleano : 1,
-    dato: u16 : 12,
+    dato: naturale16 : 12,
 }

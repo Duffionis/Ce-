@@ -1,10 +1,10 @@
-// Mappa<K, V>: chiavi intere (i32, u64, ...) -> valori di qualsiasi tipo.
+// Mappa<K, V>: chiavi intere (intero, naturale64, ...) -> valori di qualsiasi tipo.
 // Tabella hash con indirizzamento aperto; cresce da sola. Senza rimozione.
 //
 //   usa "lib/mappa.ce";
-//   variabile m: Mappa<i32, i32> = nuova_mappa();
+//   variabile m: Mappa<intero, intero> = nuova_mappa();
 //   m.inserisci(7, 70);
-//   variabile r: Opzione<i32> = m.cerca(7);       // c_e / valore
+//   variabile r: Opzione<intero> = m.cerca(7);       // c_e / valore
 //   stampa(m.contiene(7));
 //   m.libera_mappa();
 
@@ -13,24 +13,24 @@ usa "opzione.ce";
 struttura Mappa<K, V> {
     chiavi: [K],
     valori: [V],
-    pieno: [u8],
-    n: usize,
+    pieno: [byte],
+    n: dimensione,
 }
 
 funzione nuova_mappa<K, V>() -> Mappa<K, V> {
-    ritorna Mappa { chiavi: riserva(K, 0), valori: riserva(V, 0), pieno: riserva(u8, 0), n: 0 };
+    ritorna Mappa { chiavi: riserva(K, 0), valori: riserva(V, 0), pieno: riserva(byte, 0), n: 0 };
 }
 
-funzione posto_di<K>(k: K, capacita: usize) -> usize {
-    variabile h: u64 = (k come u64) * 11400714819323198485;
+funzione posto_di<K>(k: K, capacita: dimensione) -> dimensione {
+    variabile h: naturale64 = (k come naturale64) * 11400714819323198485;
     h = h ^ (h >> 32);
-    ritorna (h % (capacita come u64)) come usize;
+    ritorna (h % (capacita come naturale64)) come dimensione;
 }
 
 // Mette k=v nelle tabelle date. Vero se la chiave e' nuova, falso se esisteva.
-funzione posiziona<K, V>(chiavi: [K], valori: [V], pieno: [u8], k: K, v: V) -> booleano {
-    variabile cap: usize = chiavi.lunghezza;
-    variabile i: usize = posto_di(k, cap);
+funzione posiziona<K, V>(chiavi: [K], valori: [V], pieno: [byte], k: K, v: V) -> booleano {
+    variabile cap: dimensione = chiavi.lunghezza;
+    variabile i: dimensione = posto_di(k, cap);
     mentre pieno[i] == 1 && chiavi[i] != k {
         i = (i + 1) % cap;
     }
@@ -42,11 +42,11 @@ funzione posiziona<K, V>(chiavi: [K], valori: [V], pieno: [u8], k: K, v: V) -> b
 }
 
 funzione cresci<K, V>(m: &Mappa<K, V>) {
-    variabile cap: usize = m.chiavi.lunghezza * 2;
+    variabile cap: dimensione = m.chiavi.lunghezza * 2;
     se cap < 8 { cap = 8; }
     variabile nc: [K] = riserva(K, cap);
     variabile nv: [V] = riserva(V, cap);
-    variabile np: [u8] = riserva(u8, cap);
+    variabile np: [byte] = riserva(byte, cap);
     per i in 0..m.chiavi.lunghezza {
         se m.pieno[i] == 1 {
             posiziona(nc, nv, np, m.chiavi[i], m.valori[i]);
@@ -54,7 +54,7 @@ funzione cresci<K, V>(m: &Mappa<K, V>) {
     }
     variabile vc: [K] = m.chiavi;
     variabile vv: [V] = m.valori;
-    variabile vp: [u8] = m.pieno;
+    variabile vp: [byte] = m.pieno;
     rischio { libera(vc); libera(vv); libera(vp); }
     m.chiavi = nc;
     m.valori = nv;
@@ -72,7 +72,7 @@ funzione inserisci<K, V>(m: &Mappa<K, V>, k: K, v: V) {
 
 funzione cerca<K, V>(m: Mappa<K, V>, k: K) -> Opzione<V> {
     se m.chiavi.lunghezza == 0 { ritorna nessuno<V>(); }
-    variabile i: usize = posto_di(k, m.chiavi.lunghezza);
+    variabile i: dimensione = posto_di(k, m.chiavi.lunghezza);
     mentre m.pieno[i] == 1 {
         se m.chiavi[i] == k { ritorna qualcuno(m.valori[i]); }
         i = (i + 1) % m.chiavi.lunghezza;
@@ -87,7 +87,7 @@ funzione contiene<K, V>(m: Mappa<K, V>, k: K) -> booleano {
 funzione libera_mappa<K, V>(m: &Mappa<K, V>) {
     variabile vc: [K] = m.chiavi;
     variabile vv: [V] = m.valori;
-    variabile vp: [u8] = m.pieno;
+    variabile vp: [byte] = m.pieno;
     rischio { libera(vc); libera(vv); libera(vp); }
     m.chiavi = vc;
     m.valori = vv;

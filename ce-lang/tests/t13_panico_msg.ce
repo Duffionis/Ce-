@@ -1,5 +1,5 @@
 //# boom
-funzione principale() -> i32 {
+funzione principale() -> intero {
     panico("boom");
     ritorna 0;
 }

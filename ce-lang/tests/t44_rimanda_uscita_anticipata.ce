@@ -3,7 +3,7 @@
 //> b
 //> a
 //> 0
-funzione g(x: i32) -> i32 {
+funzione g(x: intero) -> intero {
     rimanda stampa("a");
     se x > 0 {
         ritorna 1;
@@ -11,7 +11,7 @@ funzione g(x: i32) -> i32 {
     rimanda stampa("b");
     ritorna 0;
 }
-funzione principale() -> i32 {
+funzione principale() -> intero {
     stampa(g(1));
     stampa(g(0));
     ritorna 0;
