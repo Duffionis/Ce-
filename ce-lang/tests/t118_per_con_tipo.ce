@@ -1,0 +1,9 @@
+//> 0 1 2 3 
+funzione principale() -> intero {
+    variabile t: [byte; 4];
+    costante base: dimensione = 0;
+    per i: dimensione in 0..4 { t[base + i] = i come byte; }
+    per i: dimensione in 0..4 { scrivi(t[i], " "); }
+    stampa("");
+    ritorna 0;
+}

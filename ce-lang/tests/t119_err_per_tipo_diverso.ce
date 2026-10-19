@@ -1,0 +1,6 @@
+//! gli estremi di 'per' devono essere di tipo dimensione
+funzione principale() -> intero {
+    variabile n: intero = 4;
+    per i: dimensione in 0..n { }
+    ritorna 0;
+}

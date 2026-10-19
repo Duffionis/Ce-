@@ -146,6 +146,21 @@ risultato non puo' essere una fetta.
 `rischio`), `scrivi_file` crea o sovrascrive. Gli errori tornano come `Risultato`, senza panico.
 La libreria usa `fopen`/`fread`/... del C, quindi quei nomi sono riservati.
 
+## Cicli con il tipo scelto
+
+    per i: dimensione in 0..80 { memoria[i] = 0; }
+
+Di base gli estremi letterali di `per` sono `intero`; con `: tipo` scegli un altro tipo intero
+(comodo per gli indici, che sono `dimensione`). Solo nei cicli su un intervallo.
+
+## Argomenti da riga di comando
+
+    per i in 1..numero_argomenti() { stampa(argomento(i)); }   // ./prog uno due
+
+`numero_argomenti()` conta anche il nome del programma (argomento 0), come `argc` in C.
+`argomento(i)` ritorna un `testo`; un numero troppo grande e' un `panico`.
+Con il compilatore: `python3 ce.py esegui prog.ce uno due`.
+
 ## Moduli
 
     usa "geometria.ce";      // al livello alto, percorso relativo a questo file

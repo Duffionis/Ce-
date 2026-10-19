@@ -1,0 +1,5 @@
+//! il numero dell'argomento deve essere un intero
+funzione principale() -> intero {
+    stampa(argomento(vero));
+    ritorna 0;
+}

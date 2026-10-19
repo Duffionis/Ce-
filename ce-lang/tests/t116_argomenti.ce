@@ -1,0 +1,5 @@
+//> 1
+funzione principale() -> intero {
+    stampa(numero_argomenti());
+    ritorna 0;
+}

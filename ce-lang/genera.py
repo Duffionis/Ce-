@@ -27,7 +27,8 @@ RANGE = {k: ((-(1 << (BITS[k] - 1)), (1 << (BITS[k] - 1)) - 1) if k in SIGNED
 
 VOID, BOOL = ("p", "void"), ("p", "bool")
 I32, F64, USIZE = ("p", "i32"), ("p", "f64"), ("p", "usize")
-BUILTIN = ("stampa", "scrivi", "panico", "afferma", "riserva", "libera", "misura")
+BUILTIN = ("stampa", "scrivi", "panico", "afferma", "riserva", "libera", "misura",
+           "numero_argomenti", "argomento")
 
 
 def is_int(t):
@@ -179,6 +180,7 @@ RUNTIME = r'''/* generato da Ce++ */
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #define CE_NORET __attribute__((noreturn))
 #define CE_UNUSED __attribute__((unused))
 static CE_NORET CE_UNUSED void ce_panic_idx_(size_t i, size_t n, long line, const char* CE_FILE) {
@@ -230,6 +232,11 @@ static CE_UNUSED void ce_pi(int64_t x) { printf("%lld", (long long)x); }
 static CE_UNUSED void ce_pu(uint64_t x) { printf("%llu", (unsigned long long)x); }
 static CE_UNUSED void ce_pf(double x) { printf("%g", x); }
 static CE_UNUSED void ce_pb(bool b) { fputs(b ? "vero" : "falso", stdout); }
+static int ce_argc; static char** ce_argv;
+static CE_UNUSED ce_s_u8 ce_arg(size_t i, long line, const char* CE_FILE) {
+    if (i >= (size_t)ce_argc) ce_panic_lit_("argomento inesistente", line, CE_FILE);
+    return (ce_s_u8){ (uint8_t*)ce_argv[i], strlen(ce_argv[i]) };
+}
 static CE_UNUSED void ce_ps(ce_s_u8 s) { fwrite(s.ptr, 1, s.len, stdout); }
 static CE_UNUSED void ce_nl(void) { putchar('\n'); }
 '''
@@ -846,6 +853,17 @@ class Gen:
             u = s.uid()
             return E(f"({{ size_t _n{u} = (size_t)({cnt}); "
                      f"({s.ctype(st)}){{ ({s.ctype(t)}*)ce_riserva(_n{u}, sizeof({s.ctype(t)}), {n.line}), _n{u} }}; }})", st)
+        if nm == "numero_argomenti":
+            if n.args:
+                s.err("'numero_argomenti' non vuole argomenti", n.line)
+            return E("((size_t)ce_argc)", USIZE)
+        if nm == "argomento":
+            if len(n.args) != 1:
+                s.err("'argomento' vuole un numero: argomento(1)", n.line)
+            i = s.ex(n.args[0], USIZE)
+            if not is_int(i.t):
+                s.err("il numero dell'argomento deve essere un intero", n.line)
+            return E(f"ce_arg((size_t)({i.c}), {n.line}, __FILE__)", TESTO)
         if nm == "misura":
             if len(n.args) != 1:
                 s.err("'misura' vuole un tipo: misura(Registro)", n.line)
@@ -1026,7 +1044,13 @@ class Gen:
         s.put(ind, "}")
 
     def st_range(s, n, ind):
-        if s.is_lit(n.a) and not s.is_lit(n.b):
+        if n.ty is not None:
+            s.check_type(n.ty, n.line, True)
+            a = s.ex(n.a, n.ty)
+            b = s.ex(n.b, n.ty)
+            if a.t != n.ty or b.t != n.ty:
+                s.err(f"gli estremi di 'per' devono essere di tipo {tstr(n.ty)}", n.line)
+        elif s.is_lit(n.a) and not s.is_lit(n.b):
             b = s.ex(n.b)
             a = s.ex(n.a, b.t)
         else:
@@ -1559,9 +1583,9 @@ class Gen:
         out.append(PRINTERS)
         out += s.glob_lines + s.proto + s.corpi
         if s.funcs["principale"][1] == VOID:
-            out.append("int main(void) { f_principale(); return 0; }")
+            out.append("int main(int argc, char** argv) { ce_argc = argc; ce_argv = argv; f_principale(); return 0; }")
         else:
-            out.append("int main(void) { return (int)f_principale(); }")
+            out.append("int main(int argc, char** argv) { ce_argc = argc; ce_argv = argv; return (int)f_principale(); }")
         return "\n".join(out) + "\n"
 
 

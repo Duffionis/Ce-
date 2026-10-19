@@ -471,14 +471,17 @@ class Parser:
             return N("while", ln, c=c, b=s.blocco())
         if s.acc("per"):
             v = s.ident()
+            tv = s.tipo() if s.acc(":") else None
             s.exp("in")
             s.nostruct += 1
             a = s.expr()
             if s.acc(".."):
                 b = s.expr()
                 s.nostruct -= 1
-                return N("range", ln, v=v, a=a, b=b, body=s.blocco())
+                return N("range", ln, v=v, a=a, b=b, body=s.blocco(), ty=tv)
             s.nostruct -= 1
+            if tv is not None:
+                raise ErroreCe("il tipo dopo il nome si puo' scrivere solo nei cicli su un intervallo (a..b)", ln)
             return N("each", ln, v=v, e=a, body=s.blocco())
         if s.acc("ritorna"):
             e = None if s.is_(";") else s.expr()
