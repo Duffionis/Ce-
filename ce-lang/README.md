@@ -32,7 +32,7 @@ ancora.
 
 Parole chiave: `funzione struttura variabile costante se altrimenti mentre per
 in ritorna interrompi continua vero falso rischio esterna come usa rimanda
-impacchettata scegli caso`. Le parole inglesi (`if`, `while`, `return`, ...) vengono
+impacchettata scegli caso elenco`. Le parole inglesi (`if`, `while`, `return`, ...) vengono
 rifiutate con un suggerimento ("'if' non e' Ce++: si scrive 'se'").
 
 Tipi, tutti con nome italiano:
@@ -99,6 +99,28 @@ riguardano il ciclo che lo contiene. Con `altrimenti` che ritorna in tutti i
 rami, la funzione conta come "ritorna su tutti i percorsi". Le etichette devono
 essere numeri, caratteri, `vero`/`falso` o nomi; usa `costante` per i nomi
 (il compilatore ancora non controlla che lo siano).
+
+## Variabili globali e `elenco`
+
+    variabile contatore: naturale32;        // parte da zero
+    variabile passo: intero = -2;           // valore iniziale: solo un letterale
+    variabile memoria: [byte; 65536];       // array e strutture partono azzerati
+
+    elenco: naturale16 { NOP, LDI, ADD = 10, SUB, XOR }   // 0, 1, 10, 11, 12
+
+Una `variabile` al livello alto e' condivisa da tutte le funzioni (e dai moduli).
+Puo' essere un numero, un booleano, un array o una struttura, ma senza fette (una
+fetta potrebbe puntare a dati che muoiono). Come ogni nome in Ce++, non si puo'
+nascondere con una variabile locale. `elenco` numera delle costanti
+(`: tipo` e' facoltativo, di base `intero`); non crea un tipo nuovo, quindi il
+compilatore non impedisce di mescolare numeri e nomi dell'elenco.
+
+## Operazioni sui bit: `lib/bit.ce`
+
+    usa "lib/bit.ce";
+    ruota_sx(x, 3)   ruota_dx(x, 3)   conta_bit(x)   bit(x, i)   imposta_bit(x, i, vero)
+
+Funzionano per qualsiasi intero senza segno (`byte`, `naturale16`...).
 
 ## Moduli
 
@@ -247,7 +269,7 @@ file del modulo. I tipi nei messaggi hanno nomi italiani.
   solo un semplice nome di tipo.
 - I moduli sono piatti (un solo spazio dei nomi, ancora niente `pubblico`/privato)
   e la mappa non ha rimozione e solo chiavi intere.
-- I valori globali possono essere solo costanti numeriche/booleane.
+- Le variabili globali non possono contenere fette e il valore iniziale e' solo un letterale.
 - Il recupero dopo gli errori e' semplice: dopo un errore di sintassi il
   compilatore salta al prossimo `;` o `}`, quindi un secondo errore subito dopo
   il primo puo' a volte esserne una conseguenza. Si mostrano al massimo 30 errori.

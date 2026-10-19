@@ -112,14 +112,15 @@ class Parser:
         return None
 
     # ----- livello superiore -----
-    INIZI = ("funzione", "struttura", "costante", "esterna", "usa")
+    INIZI = ("funzione", "struttura", "costante", "variabile", "elenco", "esterna", "usa")
 
     def programma(s):
         items = []
         while s.tok[0] != "eof":
             i0 = s.i
             try:
-                items.append(s.item())
+                it = s.item()
+                items.extend(it if isinstance(it, list) else [it])
             except ErroreCe as e:
                 s.errs.append(e)
                 s.salta(i0)
@@ -183,9 +184,40 @@ class Parser:
             return f
         if s.acc("struttura"):
             return s.struttura(ln)
-        if s.is_("costante"):
+        if s.is_("costante") or s.is_("variabile"):
             return s.vardecl(True)
-        s.e(f"atteso 'funzione', 'struttura', 'costante' o 'usa', trovato {s.desc()}")
+        if s.acc("elenco"):
+            return s.elenco(ln)
+        s.e(f"atteso 'funzione', 'struttura', 'costante', 'variabile', 'elenco' o 'usa', trovato {s.desc()}")
+
+    def elenco(s, ln):
+        """elenco: naturale16 { A, B, C = 10, D }  ->  costanti numerate (non e' un tipo nuovo)."""
+        ty = ("p", "i32")
+        if s.acc(":"):
+            ty = s.tipo()
+        s.exp("{")
+        out, prossimo = [], 0
+        while not s.is_("}"):
+            vl = s.tok[2]
+            nome = s.ident()
+            if s.acc("="):
+                neg = s.acc("-")
+                w = s.tok
+                if w[0] != "num" or w[1][1]:
+                    s.e("il valore di un elemento di 'elenco' deve essere un intero letterale")
+                s.i += 1
+                prossimo = -w[1][0] if neg else w[1][0]
+            num = N("num", vl, val=abs(prossimo), isf=False)
+            init = N("un", vl, op="-", e=num) if prossimo < 0 else num
+            s.consts[nome] = prossimo
+            out.append(N("var", vl, mut=False, name=nome, ty=ty, init=init, glob=True))
+            prossimo += 1
+            if not s.acc(","):
+                break
+        s.exp("}")
+        if not out:
+            raise ErroreCe("un 'elenco' vuoto", ln)
+        return out
 
     def firma(s, ln):
         nome = s.ident()
@@ -322,9 +354,11 @@ class Parser:
             init = s.expr()
         s.exp(";")
         if glob:
-            if init is None:
+            if init is None and not mut:
                 raise ErroreCe("una costante globale ha bisogno di un valore", ln)
-            v = s.const_val(init)
+            if init is None and ty is None:
+                raise ErroreCe("una variabile globale senza valore ha bisogno del tipo", ln)
+            v = None if init is None or mut else s.const_val(init)
             if v is not None:
                 s.consts[nome] = v
         return N("var", ln, mut=mut, name=nome, ty=ty, init=init, glob=glob)

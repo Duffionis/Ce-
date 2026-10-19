@@ -1,0 +1,3 @@
+//! esiste gia'
+elenco: intero { A, B, A }
+funzione principale() -> intero { ritorna 0; }

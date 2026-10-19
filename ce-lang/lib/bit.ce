@@ -1,0 +1,37 @@
+// Operazioni sui bit per qualsiasi intero senza segno (naturale8..naturale64).
+// Uso: usa "lib/bit.ce";   poi  ruota_sx(x, 3)   oppure   x.conta_bit()
+
+// Ruota a sinistra di n posizioni (n viene preso modulo la larghezza del tipo).
+funzione ruota_sx<T>(x: T, n: T) -> T {
+    costante w: T = (misura(T) * 8) come T;
+    costante k: T = n % w;
+    ritorna (x << k) | (x >> ((w - k) % w));
+}
+
+funzione ruota_dx<T>(x: T, n: T) -> T {
+    costante w: T = (misura(T) * 8) come T;
+    costante k: T = n % w;
+    ritorna (x >> k) | (x << ((w - k) % w));
+}
+
+// Quanti bit valgono 1.
+funzione conta_bit<T>(x: T) -> dimensione {
+    variabile v: T = x;
+    variabile n: dimensione = 0;
+    mentre v != 0 {
+        v = v & (v - 1);
+        n += 1;
+    }
+    ritorna n;
+}
+
+// Il bit numero i (0 = il meno significativo). Va in panico se i e' fuori dal tipo.
+funzione bit<T>(x: T, i: T) -> booleano {
+    ritorna ((x >> i) & 1) == 1;
+}
+
+funzione imposta_bit<T>(x: T, i: T, valore: booleano) -> T {
+    costante m: T = (1 come T) << i;
+    se valore { ritorna x | m; }
+    ritorna x & ~m;
+}

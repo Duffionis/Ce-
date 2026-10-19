@@ -1,0 +1,14 @@
+//> 0 1 10 11 12|due
+elenco: naturale16 { NOP, LDI, ADD = 10, SUB, XOR }
+funzione nome(op: naturale16) -> testo {
+    scegli op {
+        caso NOP { ritorna "nop"; }
+        caso ADD, SUB { ritorna "due"; }
+        altrimenti { ritorna "altro"; }
+    }
+}
+funzione principale() -> intero {
+    scrivi(NOP, " ", LDI, " ", ADD, " ", SUB, " ", XOR, "|");
+    stampa(nome(SUB));
+    ritorna 0;
+}

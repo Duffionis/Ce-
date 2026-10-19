@@ -1,0 +1,17 @@
+//> 2 -4 7 500 5
+variabile contatore: naturale32;
+variabile passo: intero = -2;
+variabile tabella: [byte; 4];
+struttura Reg { a: naturale16, b: byte }
+variabile r: Reg;
+funzione tocca() {
+    contatore += 1;
+    tabella[1] = 7;
+    r.a = 500;
+    passo = passo - 1;
+}
+funzione principale() -> intero {
+    tocca(); tocca();
+    stampa(contatore, " ", passo, " ", tabella[1], " ", r.a, " ", 5);
+    ritorna 0;
+}

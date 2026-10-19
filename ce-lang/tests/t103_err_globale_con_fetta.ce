@@ -1,0 +1,3 @@
+//! una variabile globale puo' essere un numero
+variabile v: [intero];
+funzione principale() -> intero { ritorna 0; }

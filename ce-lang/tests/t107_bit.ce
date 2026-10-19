@@ -1,0 +1,12 @@
+//> 129 6 8 3 vero falso 5 4
+usa "../lib/bit.ce";
+funzione principale() -> intero {
+    scrivi(ruota_sx(192 come byte, 1 come byte), " ");
+    scrivi(ruota_dx(24 come byte, 2 come byte), " ");
+    scrivi(ruota_sx(1 come naturale32, 35 come naturale32), " ");
+    scrivi(conta_bit(7 come naturale16) , " ");
+    scrivi(bit(4 come byte, 2 come byte), " ", bit(4 come byte, 1 come byte), " ");
+    scrivi(imposta_bit(1 come byte, 2 come byte, vero), " ");
+    stampa(imposta_bit(5 come byte, 0 come byte, falso));
+    ritorna 0;
+}

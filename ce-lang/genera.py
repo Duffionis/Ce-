@@ -1351,7 +1351,35 @@ class Gen:
         else:
             s.proto.append(f"static {s.ctype(f.ret)} f_{s.cid(f.name)}({ct});")
 
+    def glob_var(s, n):
+        """variabile globale modificabile: numero, booleano, array o struttura (senza fette)."""
+        if n.ty is None:
+            e = s.ex(n.init)
+            t = e.t
+        else:
+            t = n.ty
+        s.check_type(t, n.line, True)
+        if t[0] not in ("p", "a", "st") or t == VOID or s.holds(t):
+            s.err("una variabile globale puo' essere un numero, un booleano, un array o una "
+                  "struttura (senza fette)", n.line)
+        if n.init is None:
+            init = "{0}" if t[0] != "p" else "0"
+        else:
+            if t[0] != "p":
+                s.err("una variabile globale di questo tipo parte azzerata: togli il valore", n.line)
+            e = s.ex(n.init, t)
+            if e.t != t:
+                s.err(f"tipo diverso: atteso {tstr(t)}, trovato {tstr(e.t)}", n.line)
+            if not (n.init.k in ("num", "bool") or (
+                    n.init.k == "un" and n.init.op == "-" and n.init.e.k == "num")):
+                s.err("il valore iniziale di una variabile globale deve essere un letterale", n.line)
+            init = e.c
+        cv = s.declare(n.name, t, True, n.line)
+        s.glob_lines.append(f"static {s.ctype(t)} {cv} = {init};")
+
     def glob_const(s, n):
+        if n.mut:
+            return s.glob_var(n)
         if n.ty is not None:
             s.check_type(n.ty, n.line, True)
         e = s.ex(n.init, n.ty)

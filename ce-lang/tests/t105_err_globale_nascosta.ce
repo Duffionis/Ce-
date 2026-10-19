@@ -1,0 +1,6 @@
+//! esiste gia'
+variabile contatore: intero;
+funzione principale() -> intero {
+    variabile contatore: intero = 1;
+    ritorna 0;
+}

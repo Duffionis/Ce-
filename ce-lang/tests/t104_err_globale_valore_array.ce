@@ -1,0 +1,3 @@
+//! parte azzerata: togli il valore
+variabile t: [intero; 2] = [1, 2];
+funzione principale() -> intero { ritorna 0; }
