@@ -303,6 +303,18 @@ class Parser:
 
     def tipo(s):
         t = s.tok
+        if s.acc("funzione"):
+            s.exp("(")
+            ps = []
+            while not s.is_(")"):
+                ps.append(s.tipo())
+                if not s.acc(","):
+                    break
+            s.exp(")")
+            ret = ("p", "void")
+            if s.acc("->"):
+                ret = s.tipo()
+            return ("f", tuple(ps), ret)
         if s.acc("*"):
             return ("ptr", s.tipo())
         if s.acc("&"):
@@ -538,11 +550,12 @@ class Parser:
                 args = s.seq(")", s.expr)
                 e = N("call", t[2], name=e.name, args=args, targs=targs)
             elif s.is_("("):
-                if e.k != "id":
-                    s.e("si possono chiamare solo funzioni per nome")
                 s.i += 1
                 args = s.seq(")", s.expr)
-                e = N("call", t[2], name=e.name, args=args)
+                if e.k == "id":
+                    e = N("call", t[2], name=e.name, args=args)
+                else:
+                    e = N("callx", t[2], fn=e, args=args)
             elif s.is_("["):
                 s.i += 1
                 ns, s.nostruct = s.nostruct, 0

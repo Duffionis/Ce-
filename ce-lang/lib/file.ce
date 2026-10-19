@@ -1,0 +1,69 @@
+// Leggere e scrivere file interi. Usa le funzioni C di <stdio.h> dentro 'rischio'.
+//   usa "lib/file.ce";
+//   variabile r: Risultato<[byte], testo> = leggi_file("rom.bin");
+//   se r.riuscito { ... r.valore ... }   // libera la fetta con libera() quando hai finito
+usa "risultato.ce";
+
+esterna funzione fopen(percorso: *byte, modo: *byte) -> *byte;
+esterna funzione fclose(f: *byte) -> intero;
+esterna funzione fread(dst: *byte, dim: dimensione, n: dimensione, f: *byte) -> dimensione;
+esterna funzione fwrite(src: *byte, dim: dimensione, n: dimensione, f: *byte) -> dimensione;
+esterna funzione fseek(f: *byte, spostamento: lungo, da: intero) -> intero;
+esterna funzione ftell(f: *byte) -> lungo;
+
+// Copia un testo in memoria con uno zero finale (come vuole il C).
+funzione testo_c(t: testo) -> [byte] {
+    variabile m: [byte] = riserva(byte, t.lunghezza + 1);
+    per i in 0..t.lunghezza { m[i] = t[i]; }
+    ritorna m;
+}
+
+funzione apri_file(percorso: testo, modo: testo) -> *byte {
+    variabile p: [byte] = testo_c(percorso);
+    variabile m: [byte] = testo_c(modo);
+    variabile f: *byte;
+    rischio { f = fopen(&p[0], &m[0]); libera(p); libera(m); }
+    ritorna f;
+}
+
+// Legge tutto il file. In caso di errore ritorna il motivo.
+funzione leggi_file(percorso: testo) -> Risultato<[byte], testo> {
+    variabile f: *byte = apri_file(percorso, "rb");
+    rischio {
+        se f == ((0 come dimensione) come *byte) { ritorna male("impossibile aprire il file"); }
+        fseek(f, 0, 2);
+        variabile n: lungo = ftell(f);
+        fseek(f, 0, 0);
+        se n < 0 {
+            fclose(f);
+            ritorna male("impossibile leggere la dimensione del file");
+        }
+        variabile dati: [byte] = riserva(byte, n come dimensione);
+        se n > 0 {
+            variabile letti: dimensione = fread(&dati[0], 1, n come dimensione, f);
+            se letti != (n come dimensione) {
+                fclose(f);
+                libera(dati);
+                ritorna male("lettura del file incompleta");
+            }
+        }
+        fclose(f);
+        ritorna bene(dati);
+    }
+}
+
+// Scrive (e sovrascrive) un file. Ritorna vero se e' andato tutto bene.
+funzione scrivi_file(percorso: testo, dati: [byte]) -> Risultato<booleano, testo> {
+    variabile f: *byte = apri_file(percorso, "wb");
+    rischio {
+        se f == ((0 come dimensione) come *byte) { ritorna male("impossibile creare il file"); }
+        se dati.lunghezza > 0 {
+            se fwrite(&dati[0], 1, dati.lunghezza, f) != dati.lunghezza {
+                fclose(f);
+                ritorna male("scrittura del file incompleta");
+            }
+        }
+        fclose(f);
+    }
+    ritorna bene(vero);
+}

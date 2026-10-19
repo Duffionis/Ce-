@@ -1,0 +1,6 @@
+//! vuole 1 argomenti, ne ha ricevuti 2
+funzione principale() -> intero {
+    variabile f: funzione(intero) -> intero;
+    stampa(f(1, 2));
+    ritorna 0;
+}

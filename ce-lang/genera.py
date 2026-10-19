@@ -48,6 +48,9 @@ def tstr(t):
         return "&" + tstr(t[1])
     if k == "s":
         return "[" + tstr(t[1]) + "]"
+    if k == "f":
+        r = "" if t[2] == VOID else " -> " + tstr(t[2])
+        return "funzione(" + ", ".join(tstr(p) for p in t[1]) + ")" + r
     return f"[{tstr(t[1])}; {t[2]}]"
 
 
@@ -60,6 +63,8 @@ def es_tipo(x):
         return len(x) == 2 and isinstance(x[1], str)
     if k in ("s", "ptr", "ref"):
         return len(x) == 2 and isinstance(x[1], tuple) and es_tipo(x[1])
+    if k == "f":
+        return len(x) == 3 and all(es_tipo(p) for p in x[1]) and es_tipo(x[2])
     if k == "a":
         return len(x) == 3 and isinstance(x[1], tuple) and es_tipo(x[1]) and isinstance(x[2], int)
     return False
@@ -76,6 +81,8 @@ def sost(t, b):
         return ("g", t[1], tuple(sost(a, b) for a in t[2]))
     if k in ("s", "ptr", "ref"):
         return (k, sost(t[1], b))
+    if k == "f":
+        return ("f", tuple(sost(p, b) for p in t[1]), sost(t[2], b))
     return ("a", sost(t[1], b), t[2])
 
 
@@ -87,6 +94,8 @@ def ha_param(t, tps):
         return False
     if k == "g":
         return any(ha_param(a, tps) for a in t[2])
+    if k == "f":
+        return any(ha_param(a, tps) for a in t[1]) or ha_param(t[2], tps)
     return ha_param(t[1], tps)
 
 
@@ -294,6 +303,8 @@ class Gen:
             return "R" + s.mangle(t[1])
         if k == "s":
             return "S" + s.mangle(t[1])
+        if k == "f":
+            return "F" + "_".join(s.mangle(p) for p in t[1]) + "_R" + s.mangle(t[2])
         return f"A{t[2]}_" + s.mangle(t[1])
 
     def ctype(s, t):
@@ -304,6 +315,13 @@ class Gen:
             return "S_" + s.cid(t[1])
         if k in ("ptr", "ref"):
             return s.ctype(t[1]) + "*"
+        if k == "f":
+            name = "ce_" + s.mangle(t)
+            if name not in s.tdone:
+                s.tdone.add(name)
+                ps = ", ".join(s.ctype(p) for p in t[1]) or "void"
+                s.tdecl.append(f"typedef {s.ctype(t[2])} (*{name})({ps});")
+            return name
         if k == "s":
             name = "ce_s_" + s.mangle(t[1])
             if name not in s.tdone:
@@ -338,6 +356,14 @@ class Gen:
             s.check_type(t[1], line, False)
         elif k == "a":
             s.check_type(t[1], line, True)
+        elif k == "f":
+            for p in t[1]:
+                if p[0] == "ref":
+                    s.err("un puntatore a funzione non puo' avere parametri per riferimento (&)", line)
+                s.check_type(p, line, True)
+            s.check_type(t[2], line, False)
+            if s.holds(t[2]):
+                s.err("un puntatore a funzione non puo' restituire fette", line)
 
     def lookup(s, name, line):
         for sc in reversed(s.scopes):
@@ -442,6 +468,8 @@ class Gen:
             return s.org(n.e) if s.holds(n.e.T) else 0
         if k == "subs":
             return s.borrow(n.e)
+        if k == "callx":
+            return 0
         if k == "call":
             if n.name == "riserva":
                 return 0          # memoria dell'heap: vive finche' non la liberi
@@ -523,6 +551,14 @@ class Gen:
         return E("true" if n.val else "false", BOOL)
 
     def x_id(s, n, hint):
+        if (n.name in s.funcs and n.name not in s.generics
+                and not any(n.name in sc for sc in s.scopes)):
+            params, ret, ext = s.funcs[n.name]
+            if ext:
+                s.err(f"'{n.name}' e' una funzione C: non si puo' usare come valore", n.line)
+            if any(pt[0] == "ref" for _, pt in params):
+                s.err(f"'{n.name}' ha parametri per riferimento: non si puo' usare come valore", n.line)
+            return E("f_" + s.cid(n.name), ("f", tuple(pt for _, pt in params), ret))
         v = s.lookup(n.name, n.line)
         return E(v.c, v.t, True)
 
@@ -827,6 +863,11 @@ class Gen:
             return E(f"({{ free((void*)({a.c}).ptr); {a.c} = ({s.ctype(a.t)}){{0}}; }})", VOID)
         if getattr(n, "targs", None) and nm not in s.generics:
             s.err(f"'{nm}' non e' una funzione generica", n.line)
+        if nm not in s.generics and any(nm in sc for sc in s.scopes):
+            v = s.lookup(nm, n.line)
+            if v.t[0] != "f":
+                s.err(f"'{nm}' non e' una funzione (e' {tstr(v.t)})", n.line)
+            return s.chiama_ptr(n, nm, E(v.c, v.t, True))
         if nm in s.generics:
             nm = n.name = s.istanzia(n, hint)
         if nm not in s.funcs:
@@ -856,6 +897,22 @@ class Gen:
         s.check_riferimenti(n, refs)
         cn = ("x_" if ext else "f_") + s.cid(nm)
         return E(f"{cn}({', '.join(args)})", ret)
+
+    def chiama_ptr(s, n, nome, f):
+        _, fps, fret = f.t
+        if len(n.args) != len(fps):
+            s.err(f"'{nome}' vuole {len(fps)} argomenti, ne ha ricevuti {len(n.args)}", n.line)
+        args = [s.coerce(a, pt, True) for a, pt in zip(n.args, fps)]
+        u = s.uid()
+        return E(f"({{ {s.ctype(f.t)} _fp{u} = {f.c}; "
+                 f"if (!_fp{u}) ce_panic_lit(\"puntatore a funzione nullo\", {n.line}); "
+                 f"_fp{u}({', '.join(args)}); }})", fret)
+
+    def x_callx(s, n, hint):
+        f = s.ex(n.fn)
+        if f.t[0] != "f":
+            s.err(f"si puo' chiamare solo una funzione, non {tstr(f.t)}", n.line)
+        return s.chiama_ptr(n, "il puntatore a funzione", f)
 
     # ----- istruzioni -----
     def registra(s, e):
@@ -1109,7 +1166,7 @@ class Gen:
         s.put(ind, f"{t.c} = {v};")
 
     def st_expr(s, n, ind):
-        if n.e.k != "call":
+        if n.e.k not in ("call", "callx"):
             s.err("questa espressione non fa nulla", n.line)
         s.put(ind, f"{s.ex(n.e).c};")
 
@@ -1215,6 +1272,8 @@ class Gen:
             return (k, s.norm_tipo(t[1], line))
         if k == "a":
             return ("a", s.norm_tipo(t[1], line), t[2])
+        if k == "f":
+            return ("f", tuple(s.norm_tipo(p, line) for p in t[1]), s.norm_tipo(t[2], line))
         return t
 
     def norm(s, x, line=0):
@@ -1359,8 +1418,8 @@ class Gen:
         else:
             t = n.ty
         s.check_type(t, n.line, True)
-        if t[0] not in ("p", "a", "st") or t == VOID or s.holds(t):
-            s.err("una variabile globale puo' essere un numero, un booleano, un array o una "
+        if t[0] not in ("p", "a", "st", "f") or t == VOID or s.holds(t):
+            s.err("una variabile globale puo' essere un numero, un booleano, un array, un puntatore a funzione o una "
                   "struttura (senza fette)", n.line)
         if n.init is None:
             init = "{0}" if t[0] != "p" else "0"

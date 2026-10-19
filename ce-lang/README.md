@@ -122,6 +122,30 @@ compilatore non impedisce di mescolare numeri e nomi dell'elenco.
 
 Funzionano per qualsiasi intero senza segno (`byte`, `naturale16`...).
 
+## Puntatori a funzione
+
+    funzione raddoppia(x: intero) -> intero { ritorna x * 2; }
+    variabile h: funzione(intero) -> intero = raddoppia;
+    stampa(h(21));                                       // 42
+    variabile tabella: [funzione(intero) -> intero; 4];  // per esempio una tabella di istruzioni
+    tabella[0] = raddoppia;  stampa(tabella[0](5));
+
+Il tipo si scrive `funzione(tipi...) -> tipo`. Il nome di una funzione e' un valore di quel tipo.
+Un puntatore non impostato e' nullo, e chiamarlo e' un `panico` pulito ("puntatore a funzione nullo"),
+non un crash. Limiti: niente funzioni generiche, `esterna` o con parametri `&` come valori, e il
+risultato non puo' essere una fetta.
+
+## File: `lib/file.ce`
+
+    usa "lib/file.ce";
+    variabile r: Risultato<[byte], testo> = leggi_file("rom.bin");
+    se r.riuscito { stampa(r.valore.lunghezza); } altrimenti { stampa(r.errore); }
+    scrivi_file("salvataggio.bin", dati);
+
+`leggi_file` legge tutto il file in memoria dell'heap (libera la fetta con `libera` dentro
+`rischio`), `scrivi_file` crea o sovrascrive. Gli errori tornano come `Risultato`, senza panico.
+La libreria usa `fopen`/`fread`/... del C, quindi quei nomi sono riservati.
+
 ## Moduli
 
     usa "geometria.ce";      // al livello alto, percorso relativo a questo file

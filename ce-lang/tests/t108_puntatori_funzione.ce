@@ -1,0 +1,11 @@
+//> 42 2 11
+funzione raddoppia(x: intero) -> intero { ritorna x * 2; }
+funzione piu_uno(x: intero) -> intero { ritorna x + 1; }
+funzione applica(f: funzione(intero) -> intero, v: intero) -> intero { ritorna f(v); }
+funzione principale() -> intero {
+    variabile h: funzione(intero) -> intero = raddoppia;
+    scrivi(h(21), " ", applica(piu_uno, 1), " ");
+    variabile t: [funzione(intero) -> intero; 2] = [raddoppia, piu_uno];
+    stampa(t[1](10));
+    ritorna 0;
+}

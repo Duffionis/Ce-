@@ -1,0 +1,6 @@
+//# puntatore a funzione nullo
+funzione principale() -> intero {
+    variabile f: funzione(intero) -> intero;
+    stampa(f(1));
+    ritorna 0;
+}

@@ -1,0 +1,15 @@
+//> vero|vero 5 69|falso impossibile aprire il file
+usa "../lib/file.ce";
+funzione principale() -> intero {
+    variabile d: [byte] = riserva(byte, 5);
+    per i in 0..5 { d[i] = (65 + i) come byte; }
+    variabile w: Risultato<booleano, testo> = scrivi_file("/tmp/ce_test_t114.bin", d);
+    scrivi(w.riuscito, "|");
+    variabile r: Risultato<[byte], testo> = leggi_file("/tmp/ce_test_t114.bin");
+    scrivi(r.riuscito, " ", r.valore.lunghezza, " ", r.valore[4], "|");
+    variabile q: Risultato<[byte], testo> = leggi_file("/tmp/non_esiste_xyz_ce");
+    stampa(q.riuscito, " ", q.errore);
+    variabile v: [byte] = r.valore;
+    rischio { libera(d); libera(v); }
+    ritorna 0;
+}

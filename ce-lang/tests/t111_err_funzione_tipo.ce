@@ -1,0 +1,6 @@
+//! tipo diverso: atteso funzione(intero) -> intero, trovato funzione(intero, intero) -> intero
+funzione somma(a: intero, b: intero) -> intero { ritorna a + b; }
+funzione principale() -> intero {
+    variabile f: funzione(intero) -> intero = somma;
+    ritorna 0;
+}

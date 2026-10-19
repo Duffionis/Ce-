@@ -1,0 +1,14 @@
+//> 3 7 12
+funzione somma3(c: intero) -> intero { ritorna c + 3; }
+variabile op: [funzione(intero) -> intero; 3];
+funzione principale() -> intero {
+    op[0] = somma3;
+    op[1] = somma3;
+    op[2] = somma3;
+    variabile x: intero = 0;
+    per i in 0..3 { x = op[i](x); }
+    scrivi(op[0](0), " ");
+    scrivi(op[1](4), " ");
+    stampa(op[2](9));
+    ritorna 0;
+}

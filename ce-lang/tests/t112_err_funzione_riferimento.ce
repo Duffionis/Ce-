@@ -1,0 +1,6 @@
+//! parametri per riferimento
+funzione inc(x: &intero) { x += 1; }
+funzione principale() -> intero {
+    variabile f: funzione(intero) = inc;
+    ritorna 0;
+}
