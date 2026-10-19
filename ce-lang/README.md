@@ -32,7 +32,7 @@ ancora.
 
 Parole chiave: `funzione struttura variabile costante se altrimenti mentre per
 in ritorna interrompi continua vero falso rischio esterna come usa rimanda
-impacchettata`. Le parole inglesi (`if`, `while`, `return`, ...) vengono
+impacchettata scegli caso`. Le parole inglesi (`if`, `while`, `return`, ...) vengono
 rifiutate con un suggerimento ("'if' non e' Ce++: si scrive 'se'").
 
 Tipi, tutti con nome italiano:
@@ -83,6 +83,22 @@ tramite una copia della fetta non viene rilevato (vedi i limiti).
   assegnarla a qualcosa che vive di piu' e' un errore, e una funzione puo'
   restituire solo fette (o strutture con fette) che puntano ai suoi parametri
   o a letterali di testo.
+
+## Scelta multipla con `scegli`
+
+    scegli n {
+        caso 1 { stampa("uno"); }
+        caso 2, 3 { stampa("due o tre"); }
+        altrimenti { stampa("altro"); }
+    }
+
+Il valore si calcola una volta sola e si confronta con ogni `caso`, in ordine.
+Non c'e' "caduta" da un caso al successivo (niente `break` dimenticato come in C),
+un caso ripetuto e' un errore, e `interrompi`/`continua` dentro un `caso`
+riguardano il ciclo che lo contiene. Con `altrimenti` che ritorna in tutti i
+rami, la funzione conta come "ritorna su tutti i percorsi". Le etichette devono
+essere numeri, caratteri, `vero`/`falso` o nomi; usa `costante` per i nomi
+(il compilatore ancora non controlla che lo siano).
 
 ## Moduli
 

@@ -1,0 +1,12 @@
+//> 0 1 3 4 fine
+funzione principale() -> intero {
+    per i in 0..8 {
+        scegli i {
+            caso 2 { continua; }
+            caso 5 { interrompi; }
+            altrimenti { scrivi(i, " "); }
+        }
+    }
+    stampa("fine");
+    ritorna 0;
+}

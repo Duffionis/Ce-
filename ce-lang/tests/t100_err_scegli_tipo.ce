@@ -1,0 +1,5 @@
+//! tipi diversi: intero e booleano
+funzione principale() -> intero {
+    scegli 3 { caso vero { } }
+    ritorna 0;
+}

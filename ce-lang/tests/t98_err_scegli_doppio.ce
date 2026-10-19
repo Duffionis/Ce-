@@ -1,0 +1,5 @@
+//! caso ripetuto (gia' scritto alla riga 3)
+funzione principale() -> intero {
+    scegli 2 { caso 1 { } caso 2, 1 { } }
+    ritorna 0;
+}

@@ -1,0 +1,25 @@
+//> uno|due o tre|altro|meno|a|v
+funzione nome(n: intero) -> testo {
+    scegli n {
+        caso 1 { ritorna "uno"; }
+        caso 2, 3 { ritorna "due o tre"; }
+        caso -1 { ritorna "meno"; }
+        altrimenti { ritorna "altro"; }
+    }
+}
+
+costante B: byte = 98;
+
+funzione principale() -> intero {
+    scrivi(nome(1), "|", nome(3), "|", nome(9), "|", nome(-1), "|");
+    scegli 'a' come byte {
+        caso 97 { scrivi("a|"); }
+        caso B { scrivi("b|"); }
+    }
+    scegli vero {
+        caso falso { scrivi("f"); }
+        caso vero { scrivi("v"); }
+    }
+    stampa("");
+    ritorna 0;
+}

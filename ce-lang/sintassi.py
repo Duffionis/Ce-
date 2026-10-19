@@ -361,8 +361,61 @@ class Parser:
             els = [s.se()] if s.is_("se") else s.blocco()
         return N("if", ln, c=c, b=b, els=els)
 
+    def scegli(s):
+        """scegli x { caso 1, 2 { ... } caso 3 { ... } altrimenti { ... } }
+        Diventa: { costante _scN = x; se _scN == 1 || _scN == 2 {...} altrimenti se ... }"""
+        ln = s.tok[2]
+        s.i += 1
+        val = s.cond()
+        s.exp("{")
+        s.nsc = getattr(s, "nsc", 0) + 1
+        nome = f"_sc{s.nsc}"
+        casi, visti, altro = [], {}, None
+        while not s.is_("}"):
+            lc = s.tok[2]
+            if s.acc("caso"):
+                conds = []
+                while True:
+                    e = s.cond()
+                    sem = e
+                    if sem.k == "un" and sem.op == "-" and sem.e.k == "num":
+                        chiave = ("num", -sem.e.val)
+                    elif sem.k in ("num", "chr", "bool"):
+                        chiave = (sem.k, sem.val)
+                    elif sem.k == "id":
+                        chiave = ("id", sem.name)
+                    else:
+                        raise ErroreCe("l'etichetta di 'caso' deve essere un numero, un carattere, "
+                                       "vero/falso o una costante", e.line)
+                    if chiave in visti:
+                        raise ErroreCe(f"caso ripetuto (gia' scritto alla riga {visti[chiave]})", e.line)
+                    visti[chiave] = e.line
+                    conds.append(N("bin", e.line, op="==", l=N("id", e.line, name=nome), r=e))
+                    if not s.acc(","):
+                        break
+                c = conds[0]
+                for x in conds[1:]:
+                    c = N("bin", x.line, op="||", l=c, r=x)
+                casi.append((lc, c, s.blocco()))
+            elif s.acc("altrimenti"):
+                if altro is not None:
+                    raise ErroreCe("'altrimenti' ripetuto in 'scegli'", lc)
+                altro = s.blocco()
+            else:
+                s.e(f"in 'scegli' atteso 'caso' o 'altrimenti', trovato {s.desc()}")
+        s.i += 1
+        if not casi and altro is None:
+            raise ErroreCe("'scegli' senza casi", ln)
+        catena = altro
+        for lc, c, b in reversed(casi):
+            catena = [N("if", lc, c=c, b=b, els=catena)]
+        decl = N("var", ln, mut=False, name=nome, ty=None, init=val, glob=False)
+        return N("blk", ln, b=[decl] + (catena or []))
+
     def stmt(s):
         ln = s.tok[2]
+        if s.is_("scegli"):
+            return s.scegli()
         if s.is_("variabile") or s.is_("costante"):
             return s.vardecl()
         if s.is_("se"):

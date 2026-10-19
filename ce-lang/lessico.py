@@ -29,7 +29,7 @@ PAROLE_CHIAVE = {
     "funzione", "struttura", "variabile", "costante", "se", "altrimenti",
     "mentre", "per", "in", "ritorna", "interrompi", "continua",
     "vero", "falso", "rischio", "esterna", "come", "usa", "rimanda",
-    "impacchettata",
+    "impacchettata", "scegli", "caso",
 }
 
 # Parole inglesi vietate: danno un errore che spiega come si scrive in Ce++.
@@ -42,7 +42,8 @@ INGLESE = {
     "extern": "esterna", "unsafe": "rischio", "as": "come",
     "void": "vuoto", "int": "intero", "bool": "booleano",
     "char": "carattere", "float": "decimale", "double": "doppio",
-    "string": "testo",
+    "string": "testo", "switch": "scegli", "case": "caso",
+    "default": "altrimenti",
     "i8": "intero8", "i16": "intero16", "i32": "intero32", "i64": "intero64",
     "u8": "naturale8", "u16": "naturale16", "u32": "naturale32",
     "u64": "naturale64", "usize": "dimensione", "f32": "reale32", "f64": "reale64",

@@ -1,0 +1,7 @@
+//! non ritorna un valore su tutti i percorsi
+funzione f(n: intero) -> intero {
+    scegli n {
+        caso 1 { ritorna 1; }
+    }
+}
+funzione principale() -> intero { ritorna f(1); }
