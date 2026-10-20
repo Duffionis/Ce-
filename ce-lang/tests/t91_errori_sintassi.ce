@@ -1,5 +1,5 @@
 //! atteso un'espressione
-//! atteso ';'
+//! manca ';'
 //! 2 errori
 funzione a() -> intero {
     variabile x: intero = ;

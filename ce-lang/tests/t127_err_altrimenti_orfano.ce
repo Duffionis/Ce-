@@ -1,0 +1,10 @@
+//! 'altrimenti' senza un 'se' subito prima
+//!- blocco non chiuso
+funzione principale() -> intero {
+    se 1 < 2 {
+        stampa("a");
+    altrimenti {
+        stampa("b");
+    }
+    ritorna 0;
+}

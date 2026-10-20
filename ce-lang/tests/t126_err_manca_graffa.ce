@@ -1,0 +1,9 @@
+//! manca una '}' che chiude il blocco aperto prima
+//!- blocco non chiuso
+funzione somma(a: intero, b: intero) -> intero {
+    ritorna a + b;
+
+funzione principale() -> intero {
+    stampa(somma(1, 2));
+    ritorna 0;
+}

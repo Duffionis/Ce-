@@ -1,0 +1,23 @@
+//> 1 2 3 5 8 9 |vero|-3 -1 0 4 |1.5 2.5 |vero
+usa "../lib/ordina.ce";
+funzione principale() -> intero {
+    variabile v: [intero] = riserva(intero, 6);
+    costante dati: [intero; 6] = [5, 2, 9, 1, 8, 3];
+    per i: dimensione in 0..6 { v[i] = dati[i]; }
+    ordina(v);
+    per i: dimensione in 0..6 { scrivi(v[i], " "); }
+    scrivi("|", e_ordinata(v), "|");
+    variabile w: [intero; 4] = [4, -1, -3, 0];
+    ordina(w[0..4]);
+    per i: dimensione in 0..4 { scrivi(w[i], " "); }
+    variabile f: [doppio; 2] = [2.5, 1.5];
+    scrivi("|");
+    ordina(f[0..2]);
+    per i: dimensione in 0..2 { scrivi(f[i], " "); }
+    variabile vuoto: [intero] = riserva(intero, 0);
+    ordina(vuoto);
+    stampa("|", e_ordinata(vuoto));
+    variabile vv: [intero] = v;
+    rischio { libera(vv); }
+    ritorna 0;
+}

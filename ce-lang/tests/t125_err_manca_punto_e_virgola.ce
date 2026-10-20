@@ -1,0 +1,7 @@
+//! :3: errore: manca ';' alla fine di questa riga
+funzione principale() -> intero {
+    variabile x: intero = 5
+    variabile y: intero = 6;
+    stampa(x + y);
+    ritorna 0;
+}

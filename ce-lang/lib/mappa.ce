@@ -1,11 +1,12 @@
 // Mappa<K, V>: chiavi intere (intero, naturale64, ...) -> valori di qualsiasi tipo.
-// Tabella hash con indirizzamento aperto; cresce da sola. Senza rimozione.
+// Tabella hash con indirizzamento aperto; cresce da sola. Si possono togliere chiavi.
 //
 //   usa "lib/mappa.ce";
 //   variabile m: Mappa<intero, intero> = nuova_mappa();
 //   m.inserisci(7, 70);
 //   variabile r: Opzione<intero> = m.cerca(7);       // c_e / valore
 //   stampa(m.contiene(7));
+//   m.rimuovi(7);                                    // vero se c'era
 //   m.libera_mappa();
 
 usa "opzione.ce";
@@ -13,12 +14,13 @@ usa "opzione.ce";
 struttura Mappa<K, V> {
     chiavi: [K],
     valori: [V],
-    pieno: [byte],
-    n: dimensione,
+    pieno: [byte],         // 0 = vuoto, 1 = occupato, 2 = rimosso
+    n: dimensione,         // chiavi presenti
+    usati: dimensione,     // posti occupati o rimossi
 }
 
 funzione nuova_mappa<K, V>() -> Mappa<K, V> {
-    ritorna Mappa { chiavi: riserva(K, 0), valori: riserva(V, 0), pieno: riserva(byte, 0), n: 0 };
+    ritorna Mappa { chiavi: riserva(K, 0), valori: riserva(V, 0), pieno: riserva(byte, 0), n: 0, usati: 0 };
 }
 
 funzione posto_di<K>(k: K, capacita: dimensione) -> dimensione {
@@ -28,17 +30,28 @@ funzione posto_di<K>(k: K, capacita: dimensione) -> dimensione {
 }
 
 // Mette k=v nelle tabelle date. Vero se la chiave e' nuova, falso se esisteva.
-funzione posiziona<K, V>(chiavi: [K], valori: [V], pieno: [byte], k: K, v: V) -> booleano {
+// Ritorna 0 se la chiave esisteva, 1 se e' nuova in un posto vuoto, 2 se e' nuova in un posto rimosso.
+funzione posiziona<K, V>(chiavi: [K], valori: [V], pieno: [byte], k: K, v: V) -> byte {
     variabile cap: dimensione = chiavi.lunghezza;
     variabile i: dimensione = posto_di(k, cap);
-    mentre pieno[i] == 1 && chiavi[i] != k {
+    variabile libero: dimensione = cap;
+    mentre pieno[i] != 0 {
+        se pieno[i] == 1 && chiavi[i] == k {
+            valori[i] = v;
+            ritorna 0;
+        }
+        se pieno[i] == 2 && libero == cap { libero = i; }
         i = (i + 1) % cap;
     }
-    variabile nuova: booleano = pieno[i] == 0;
+    variabile esito: byte = 1;
+    se libero != cap {
+        i = libero;
+        esito = 2;
+    }
     pieno[i] = 1;
     chiavi[i] = k;
     valori[i] = v;
-    ritorna nuova;
+    ritorna esito;
 }
 
 funzione cresci<K, V>(m: &Mappa<K, V>) {
@@ -47,7 +60,7 @@ funzione cresci<K, V>(m: &Mappa<K, V>) {
     variabile nc: [K] = riserva(K, cap);
     variabile nv: [V] = riserva(V, cap);
     variabile np: [byte] = riserva(byte, cap);
-    per i in 0..m.chiavi.lunghezza {
+    per i: dimensione in 0..m.chiavi.lunghezza {
         se m.pieno[i] == 1 {
             posiziona(nc, nv, np, m.chiavi[i], m.valori[i]);
         }
@@ -59,25 +72,41 @@ funzione cresci<K, V>(m: &Mappa<K, V>) {
     m.chiavi = nc;
     m.valori = nv;
     m.pieno = np;
+    m.usati = m.n;
 }
 
 funzione inserisci<K, V>(m: &Mappa<K, V>, k: K, v: V) {
-    se (m.n + 1) * 10 > m.chiavi.lunghezza * 7 {
+    se (m.usati + 1) * 10 > m.chiavi.lunghezza * 7 {
         cresci(m);
     }
-    se posiziona(m.chiavi, m.valori, m.pieno, k, v) {
-        m.n += 1;
-    }
+    costante esito: byte = posiziona(m.chiavi, m.valori, m.pieno, k, v);
+    se esito != 0 { m.n += 1; }
+    se esito == 1 { m.usati += 1; }
 }
 
 funzione cerca<K, V>(m: Mappa<K, V>, k: K) -> Opzione<V> {
     se m.chiavi.lunghezza == 0 { ritorna nessuno<V>(); }
     variabile i: dimensione = posto_di(k, m.chiavi.lunghezza);
-    mentre m.pieno[i] == 1 {
-        se m.chiavi[i] == k { ritorna qualcuno(m.valori[i]); }
+    mentre m.pieno[i] != 0 {
+        se m.pieno[i] == 1 && m.chiavi[i] == k { ritorna qualcuno(m.valori[i]); }
         i = (i + 1) % m.chiavi.lunghezza;
     }
     ritorna nessuno<V>();
+}
+
+// Toglie la chiave. Vero se c'era.
+funzione rimuovi<K, V>(m: &Mappa<K, V>, k: K) -> booleano {
+    se m.chiavi.lunghezza == 0 { ritorna falso; }
+    variabile i: dimensione = posto_di(k, m.chiavi.lunghezza);
+    mentre m.pieno[i] != 0 {
+        se m.pieno[i] == 1 && m.chiavi[i] == k {
+            m.pieno[i] = 2;
+            m.n -= 1;
+            ritorna vero;
+        }
+        i = (i + 1) % m.chiavi.lunghezza;
+    }
+    ritorna falso;
 }
 
 funzione contiene<K, V>(m: Mappa<K, V>, k: K) -> booleano {
@@ -93,4 +122,5 @@ funzione libera_mappa<K, V>(m: &Mappa<K, V>) {
     m.valori = vv;
     m.pieno = vp;
     m.n = 0;
+    m.usati = 0;
 }

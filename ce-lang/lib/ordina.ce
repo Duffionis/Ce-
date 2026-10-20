@@ -1,0 +1,47 @@
+// Ordina una fetta sul posto, dal piu' piccolo al piu' grande (heapsort: sempre
+// O(n log n), niente memoria extra). Funziona per ogni tipo che si puo' confrontare con '<'.
+//
+//   usa "lib/ordina.ce";
+//   ordina(v);                    // v: [intero], [byte], [doppio] ...
+//   stampa(e_ordinata(v));
+
+funzione scendi<T>(v: [T], inizio: dimensione, fine: dimensione) {
+    variabile radice: dimensione = inizio;
+    mentre 2 * radice + 1 < fine {
+        variabile figlio: dimensione = 2 * radice + 1;
+        se figlio + 1 < fine && v[figlio] < v[figlio + 1] { figlio += 1; }
+        se v[radice] < v[figlio] {
+            costante tmp: T = v[radice];
+            v[radice] = v[figlio];
+            v[figlio] = tmp;
+            radice = figlio;
+        } altrimenti {
+            ritorna;
+        }
+    }
+}
+
+funzione ordina<T>(v: [T]) {
+    costante n: dimensione = v.lunghezza;
+    se n < 2 { ritorna; }
+    variabile i: dimensione = n / 2;
+    mentre i > 0 {
+        i -= 1;
+        scendi(v, i, n);
+    }
+    variabile fine: dimensione = n;
+    mentre fine > 1 {
+        fine -= 1;
+        costante tmp: T = v[0];
+        v[0] = v[fine];
+        v[fine] = tmp;
+        scendi(v, 0, fine);
+    }
+}
+
+funzione e_ordinata<T>(v: [T]) -> booleano {
+    per i: dimensione in 1..v.lunghezza {
+        se v[i] < v[i - 1] { ritorna falso; }
+    }
+    ritorna vero;
+}

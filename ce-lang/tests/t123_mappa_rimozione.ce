@@ -1,0 +1,19 @@
+//> vero vero falso|2|70 0|2 vero|100 99
+usa "../lib/mappa.ce";
+funzione principale() -> intero {
+    variabile m: Mappa<intero, intero> = nuova_mappa();
+    m.inserisci(7, 70);
+    m.inserisci(8, 80);
+    m.inserisci(9, 90);
+    scrivi(m.rimuovi(8), " ", m.contiene(7), " ", m.contiene(8), "|");
+    scrivi(m.n, "|");
+    scrivi(m.cerca(7).valore_o(-1), " ", m.cerca(8).valore_o(0), "|");
+    m.inserisci(8, 81);
+    m.rimuovi(8);
+    scrivi(m.n, " ", m.rimuovi(7) == vero, "|");
+    per i in 0..100 { m.inserisci(i, i + 100); }
+    per i in 0..100 { se i != 50 { m.rimuovi(i); } }
+    stampa(m.cerca(50).valore_o(0) - 50, " ", m.n + 98);
+    m.libera_mappa();
+    ritorna 0;
+}

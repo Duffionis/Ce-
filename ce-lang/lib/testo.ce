@@ -1,0 +1,131 @@
+// Testo: funzioni sui 'testo' (fette di byte) e 'Stringa', un testo che cresce.
+//
+//   usa "lib/testo.ce";
+//   variabile s: Stringa = nuova_stringa();
+//   s.aggiungi_testo("punti: ");
+//   s.aggiungi_numero(-42);
+//   stampa(s.come_testo());          // punti: -42
+//   s.libera_stringa();
+//
+//   numero_da_testo("123")           // Risultato<lungo, testo>
+//   testo_uguale(a, b)  inizia_con(t, p)  finisce_con(t, p)  cerca_testo(t, ago)  taglia(t)
+usa "risultato.ce";
+usa "opzione.ce";
+
+struttura Stringa {
+    dati: [byte],
+    n: dimensione,
+}
+
+funzione nuova_stringa() -> Stringa {
+    ritorna Stringa { dati: riserva(byte, 0), n: 0 };
+}
+
+funzione aggiungi_byte(s: &Stringa, b: byte) {
+    se s.n == s.dati.lunghezza {
+        variabile nuovo: [byte] = riserva(byte, s.n * 2 + 16);
+        per i: dimensione in 0..s.n { nuovo[i] = s.dati[i]; }
+        variabile vecchio: [byte] = s.dati;
+        rischio { libera(vecchio); }
+        s.dati = nuovo;
+    }
+    s.dati[s.n] = b;
+    s.n += 1;
+}
+
+funzione aggiungi_testo(s: &Stringa, t: testo) {
+    per i: dimensione in 0..t.lunghezza { aggiungi_byte(s, t[i]); }
+}
+
+// Aggiunge un numero scritto in cifre decimali (con il segno meno se negativo).
+funzione aggiungi_numero(s: &Stringa, n: lungo) {
+    variabile m: naturale64 = n come naturale64;
+    se n < 0 {
+        aggiungi_byte(s, 45);
+        m = 0 - m;
+    }
+    variabile cifre: [byte; 20];
+    variabile k: dimensione = 0;
+    mentre vero {
+        cifre[k] = (48 + (m % 10)) come byte;
+        k += 1;
+        m = m / 10;
+        se m == 0 { interrompi; }
+    }
+    mentre k > 0 {
+        k -= 1;
+        aggiungi_byte(s, cifre[k]);
+    }
+}
+
+// Una vista sul contenuto: vale finche' non aggiungi altro o liberi la stringa.
+funzione come_testo(s: Stringa) -> testo {
+    ritorna s.dati[0..s.n];
+}
+
+funzione libera_stringa(s: &Stringa) {
+    variabile d: [byte] = s.dati;
+    rischio { libera(d); }
+    s.dati = d;
+    s.n = 0;
+}
+
+funzione testo_uguale(a: testo, b: testo) -> booleano {
+    se a.lunghezza != b.lunghezza { ritorna falso; }
+    per i: dimensione in 0..a.lunghezza {
+        se a[i] != b[i] { ritorna falso; }
+    }
+    ritorna vero;
+}
+
+funzione inizia_con(t: testo, prefisso: testo) -> booleano {
+    se prefisso.lunghezza > t.lunghezza { ritorna falso; }
+    ritorna testo_uguale(t[0..prefisso.lunghezza], prefisso);
+}
+
+funzione finisce_con(t: testo, suffisso: testo) -> booleano {
+    se suffisso.lunghezza > t.lunghezza { ritorna falso; }
+    ritorna testo_uguale(t[(t.lunghezza - suffisso.lunghezza)..t.lunghezza], suffisso);
+}
+
+// Posizione della prima occorrenza di 'ago' dentro 't'.
+funzione cerca_testo(t: testo, ago: testo) -> Opzione<dimensione> {
+    se ago.lunghezza > t.lunghezza { ritorna nessuno<dimensione>(); }
+    per i: dimensione in 0..(t.lunghezza - ago.lunghezza + 1) {
+        se testo_uguale(t[i..(i + ago.lunghezza)], ago) { ritorna qualcuno(i); }
+    }
+    ritorna nessuno<dimensione>();
+}
+
+// Toglie spazi, tabulazioni e a capo all'inizio e alla fine.
+funzione taglia(t: testo) -> testo {
+    variabile a: dimensione = 0;
+    variabile b: dimensione = t.lunghezza;
+    mentre a < b && (t[a] == 32 || t[a] == 9 || t[a] == 10 || t[a] == 13) { a += 1; }
+    mentre b > a && (t[b - 1] == 32 || t[b - 1] == 9 || t[b - 1] == 10 || t[b - 1] == 13) { b -= 1; }
+    ritorna t[a..b];
+}
+
+// Legge un numero intero decimale (con segno facoltativo). Errore se non e' un numero
+// o non ci sta in un 'lungo'.
+funzione numero_da_testo(t: testo) -> Risultato<lungo, testo> {
+    variabile i: dimensione = 0;
+    variabile negativo: booleano = falso;
+    se t.lunghezza > 0 && (t[0] == 45 || t[0] == 43) {
+        negativo = t[0] == 45;
+        i = 1;
+    }
+    se i == t.lunghezza { ritorna male("non e' un numero"); }
+    variabile limite: naturale64 = 9223372036854775807;
+    se negativo { limite = 9223372036854775808; }
+    variabile m: naturale64 = 0;
+    mentre i < t.lunghezza {
+        se t[i] < 48 || t[i] > 57 { ritorna male("non e' un numero"); }
+        costante d: naturale64 = (t[i] - 48) come naturale64;
+        se m > (limite - d) / 10 { ritorna male("numero troppo grande"); }
+        m = m * 10 + d;
+        i += 1;
+    }
+    se negativo { ritorna bene((0 - m) come lungo); }
+    ritorna bene(m come lungo);
+}

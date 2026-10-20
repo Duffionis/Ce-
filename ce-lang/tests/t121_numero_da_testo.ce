@@ -1,0 +1,14 @@
+//> 123 -45 vero|falso non e' un numero|falso numero troppo grande|-9223372036854775808
+usa "../lib/testo.ce";
+funzione principale() -> intero {
+    costante a: Risultato<lungo, testo> = numero_da_testo("123");
+    costante b: Risultato<lungo, testo> = numero_da_testo("-45");
+    scrivi(a.valore, " ", b.valore, " ", a.riuscito, "|");
+    costante c: Risultato<lungo, testo> = numero_da_testo("12x");
+    scrivi(c.riuscito, " ", c.errore, "|");
+    costante d: Risultato<lungo, testo> = numero_da_testo("9223372036854775808");
+    scrivi(d.riuscito, " ", d.errore, "|");
+    costante e: Risultato<lungo, testo> = numero_da_testo("-9223372036854775808");
+    stampa(e.valore);
+    ritorna 0;
+}

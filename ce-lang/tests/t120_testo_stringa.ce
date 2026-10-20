@@ -1,0 +1,17 @@
+//> punti: -42 e 0 e 9223372036854775807|vero falso vero|4|ciao
+usa "../lib/testo.ce";
+funzione principale() -> intero {
+    variabile s: Stringa = nuova_stringa();
+    s.aggiungi_testo("punti: ");
+    s.aggiungi_numero(-42);
+    s.aggiungi_testo(" e ");
+    s.aggiungi_numero(0);
+    s.aggiungi_testo(" e ");
+    s.aggiungi_numero(9223372036854775807);
+    scrivi(s.come_testo(), "|");
+    scrivi(inizia_con("ciao mondo", "ciao"), " ", finisce_con("ciao mondo", "ciao"), " ", testo_uguale("a", "a"), "|");
+    scrivi(cerca_testo("ciao mondo", "mondo").valore_o(99) - 1, "|");
+    stampa(taglia("  ciao \n"));
+    s.libera_stringa();
+    ritorna 0;
+}

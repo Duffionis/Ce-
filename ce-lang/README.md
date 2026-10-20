@@ -258,7 +258,12 @@ funziona `v.aggiungi(5)`: niente classi o blocchi `impl`, solo funzioni.
 | `vettore.ce` | `Vettore<T>`: array dinamico (`aggiungi`, `valore`, `libera_vettore`) |
 | `opzione.ce` | `Opzione<T>`: un valore che puo' mancare (`qualcuno`, `nessuno`, `valore_o`, `valore_certo`) |
 | `risultato.ce` | `Risultato<T, E>`: un valore o un errore, senza panico (`bene`, `male`) |
-| `mappa.ce` | `Mappa<K, V>`: tabella hash, chiavi intere (`nuova_mappa`, `inserisci`, `cerca`, `contiene`, `libera_mappa`) |
+| `mappa.ce` | `Mappa<K, V>`: tabella hash, chiavi intere (`nuova_mappa`, `inserisci`, `cerca`, `contiene`, `rimuovi`, `libera_mappa`) |
+| `mappa_testo.ce` | `MappaTesto<V>`: tabella hash con chiavi `testo` copiate (`nuova_mappa_testo`, `inserisci_t`, `cerca_t`, `contiene_t`, `rimuovi_t`, `libera_mappa_testo`) |
+| `testo.ce` | `Stringa` che cresce (`aggiungi_testo`, `aggiungi_numero`, `come_testo`), `numero_da_testo`, `testo_uguale`, `inizia_con`, `finisce_con`, `cerca_testo`, `taglia` |
+| `ordina.ce` | `ordina(v)` (heapsort, ogni tipo con `<`), `e_ordinata(v)` |
+| `bit.ce` | rotazioni, `conta_bit`, `bit`, `imposta_bit` |
+| `file.ce` | `leggi_file`, `scrivi_file` |
 
     usa "lib/mappa.ce";
     variabile m: Mappa<intero, intero> = nuova_mappa();
@@ -266,8 +271,8 @@ funziona `v.aggiungi(5)`: niente classi o blocchi `impl`, solo funzioni.
     stampa(m.cerca(7).valore_o(-1));    // 70
     m.libera_mappa();
 
-`Mappa` non ha ancora la rimozione e accetta solo chiavi intere (calcola
-l'hash di `k come naturale64`).
+`Mappa` accetta solo chiavi intere (calcola l'hash di `k come naturale64`); per le chiavi
+di testo usa `MappaTesto`.
 
 ## Disposizione esatta: `impacchettata`, campi a bit, `misura`
 
@@ -296,7 +301,9 @@ l'hash di `k come naturale64`).
 Il compilatore segnala tutti gli errori che trova in una sola esecuzione
 (ognuno come `file:riga: errore: messaggio`, poi `N errori`), non solo il
 primo. Una variabile la cui dichiarazione e' fallita non causa un secondo
-errore "nome sconosciuto" a ogni uso. Gli errori dentro un modulo indicano il
+errore "nome sconosciuto" a ogni uso. Per i segni mancanti il messaggio indica la riga giusta
+("manca ';' alla fine di questa riga"), e una `}` mancante o in piu' viene segnalata subito
+invece di produrre una valanga di errori. Gli errori dentro un modulo indicano il
 file del modulo. I tipi nei messaggi hanno nomi italiani.
 
 ## Limiti noti (v0.1, onesti)
@@ -307,7 +314,7 @@ file del modulo. I tipi nei messaggi hanno nomi italiani.
   una copia di una fetta dopo `libera` non viene rilevato. `riserva` accetta
   solo un semplice nome di tipo.
 - I moduli sono piatti (un solo spazio dei nomi, ancora niente `pubblico`/privato)
-  e la mappa non ha rimozione e solo chiavi intere.
+  e la mappa `Mappa` ha solo chiavi intere.
 - Le variabili globali non possono contenere fette e il valore iniziale e' solo un letterale.
 - Il recupero dopo gli errori e' semplice: dopo un errore di sintassi il
   compilatore salta al prossimo `;` o `}`, quindi un secondo errore subito dopo

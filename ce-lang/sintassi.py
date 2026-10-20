@@ -71,6 +71,12 @@ class Parser:
     def e(s, msg):
         raise ErroreCe(msg, s.tok[2])
 
+    def fatale(s, msg):
+        """Errore dopo il quale le parentesi sono sfasate: inutile cercare altri errori."""
+        e = ErroreCe(msg, s.tok[2])
+        e.fatale = True
+        raise e
+
     def is_(s, v):
         t = s.tok
         return t[0] in ("op", "kw") and t[1] == v
@@ -83,6 +89,10 @@ class Parser:
 
     def exp(s, v):
         if not s.acc(v):
+            if v in (";", ")", "]") and s.i > 0 and s.t[s.i - 1][2] < s.tok[2]:
+                # il segno manca alla fine della riga di prima, non all'inizio di questa
+                raise ErroreCe(f"manca '{v}' alla fine di questa riga (prima di {s.desc()})",
+                               s.t[s.i - 1][2])
             s.e(f"atteso '{v}', trovato {s.desc()}")
 
     def ident(s):
@@ -123,6 +133,8 @@ class Parser:
                 items.extend(it if isinstance(it, list) else [it])
             except ErroreCe as e:
                 s.errs.append(e)
+                if getattr(e, "fatale", False):
+                    break
                 s.salta(i0)
         if s.errs:
             if len(s.errs) == 1:
@@ -385,6 +397,8 @@ class Parser:
             try:
                 out.append(s.stmt())
             except ErroreCe as e:
+                if getattr(e, "fatale", False):
+                    raise
                 s.errs.append(e)
                 s.salta_istr()
         s.i += 1
@@ -662,6 +676,10 @@ class Parser:
                 return s.struct_lit()
             s.i += 1
             return N("id", ln, name=v)
+        if k == "kw" and v in ("funzione", "struttura", "esterna", "usa", "elenco"):
+            s.fatale(f"trovato '{v}' dentro un blocco: manca una '}}' che chiude il blocco aperto prima")
+        if k == "kw" and v == "altrimenti":
+            s.fatale("'altrimenti' senza un 'se' subito prima (manca una '}' o c'e' una '}' di troppo?)")
         s.e(f"atteso un'espressione, trovato {s.desc()}")
 
 

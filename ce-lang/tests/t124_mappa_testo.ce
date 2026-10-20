@@ -1,0 +1,23 @@
+//> 1 2 0|vero falso|2|999
+usa "../lib/mappa_testo.ce";
+funzione principale() -> intero {
+    variabile m: MappaTesto<intero> = nuova_mappa_testo();
+    variabile s: Stringa = nuova_stringa();
+    s.aggiungi_testo("due");
+    m.inserisci_t("uno", 1);
+    m.inserisci_t(s.come_testo(), 2);
+    s.libera_stringa();
+    scrivi(m.cerca_t("uno").valore_o(-1), " ", m.cerca_t("due").valore_o(-1), " ", m.cerca_t("tre").valore_o(0), "|");
+    scrivi(m.rimuovi_t("uno"), " ", m.contiene_t("uno"), "|");
+    scrivi(m.n + 1, "|");
+    per i in 0..1000 {
+        variabile k: Stringa = nuova_stringa();
+        k.aggiungi_testo("chiave");
+        k.aggiungi_numero(i come lungo);
+        m.inserisci_t(k.come_testo(), i);
+        k.libera_stringa();
+    }
+    stampa(m.n - 2);
+    m.libera_mappa_testo();
+    ritorna 0;
+}

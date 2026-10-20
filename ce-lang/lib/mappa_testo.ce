@@ -1,0 +1,130 @@
+// MappaTesto<V>: chiavi di tipo 'testo' -> valori di qualsiasi tipo.
+// Le chiavi vengono copiate (la mappa le possiede), quindi puoi passare testi temporanei.
+//
+//   usa "lib/mappa_testo.ce";
+//   variabile m: MappaTesto<intero> = nuova_mappa_testo();
+//   m.inserisci_t("uno", 1);
+//   stampa(m.cerca_t("uno").valore_o(0));
+//   m.rimuovi_t("uno");
+//   m.libera_mappa_testo();
+usa "testo.ce";
+
+struttura MappaTesto<V> {
+    chiavi: [testo],
+    valori: [V],
+    pieno: [byte],         // 0 = vuoto, 1 = occupato, 2 = rimosso
+    n: dimensione,
+    usati: dimensione,
+}
+
+funzione nuova_mappa_testo<V>() -> MappaTesto<V> {
+    ritorna MappaTesto { chiavi: riserva(testo, 0), valori: riserva(V, 0), pieno: riserva(byte, 0), n: 0, usati: 0 };
+}
+
+funzione hash_testo(t: testo) -> naturale64 {
+    variabile h: naturale64 = 14695981039346656037;      // FNV-1a
+    per i: dimensione in 0..t.lunghezza {
+        h = (h ^ (t[i] come naturale64)) * 1099511628211;
+    }
+    ritorna h;
+}
+
+// Copia un testo nell'heap (il chiamante o la mappa lo liberano).
+funzione copia_testo(t: testo) -> testo {
+    variabile m: [byte] = riserva(byte, t.lunghezza);
+    per i: dimensione in 0..t.lunghezza { m[i] = t[i]; }
+    ritorna m;
+}
+
+funzione libera_chiave(t: testo) {
+    variabile d: [byte] = t;
+    rischio { libera(d); }
+}
+
+// Ritorna il posto della chiave se c'e', altrimenti la capacita'.
+funzione trova_t<V>(m: MappaTesto<V>, k: testo) -> dimensione {
+    costante cap: dimensione = m.chiavi.lunghezza;
+    se cap == 0 { ritorna 0; }
+    variabile i: dimensione = (hash_testo(k) % (cap come naturale64)) come dimensione;
+    mentre m.pieno[i] != 0 {
+        se m.pieno[i] == 1 && testo_uguale(m.chiavi[i], k) { ritorna i; }
+        i = (i + 1) % cap;
+    }
+    ritorna cap;
+}
+
+funzione cresci_t<V>(m: &MappaTesto<V>) {
+    variabile cap: dimensione = m.chiavi.lunghezza * 2;
+    se cap < 8 { cap = 8; }
+    variabile nc: [testo] = riserva(testo, cap);
+    variabile nv: [V] = riserva(V, cap);
+    variabile np: [byte] = riserva(byte, cap);
+    per i: dimensione in 0..m.chiavi.lunghezza {
+        se m.pieno[i] == 1 {
+            variabile j: dimensione = (hash_testo(m.chiavi[i]) % (cap come naturale64)) come dimensione;
+            mentre np[j] != 0 { j = (j + 1) % cap; }
+            np[j] = 1;
+            nc[j] = m.chiavi[i];
+            nv[j] = m.valori[i];
+        }
+    }
+    variabile vc: [testo] = m.chiavi;
+    variabile vv: [V] = m.valori;
+    variabile vp: [byte] = m.pieno;
+    rischio { libera(vc); libera(vv); libera(vp); }
+    m.chiavi = nc;
+    m.valori = nv;
+    m.pieno = np;
+    m.usati = m.n;
+}
+
+funzione inserisci_t<V>(m: &MappaTesto<V>, k: testo, v: V) {
+    costante p: dimensione = trova_t(m, k);
+    se p < m.chiavi.lunghezza {
+        m.valori[p] = v;
+        ritorna;
+    }
+    se (m.usati + 1) * 10 > m.chiavi.lunghezza * 7 { cresci_t(m); }
+    costante cap: dimensione = m.chiavi.lunghezza;
+    variabile i: dimensione = (hash_testo(k) % (cap come naturale64)) come dimensione;
+    mentre m.pieno[i] == 1 { i = (i + 1) % cap; }
+    se m.pieno[i] == 0 { m.usati += 1; }
+    m.pieno[i] = 1;
+    m.chiavi[i] = copia_testo(k);
+    m.valori[i] = v;
+    m.n += 1;
+}
+
+funzione cerca_t<V>(m: MappaTesto<V>, k: testo) -> Opzione<V> {
+    costante p: dimensione = trova_t(m, k);
+    se p < m.chiavi.lunghezza { ritorna qualcuno(m.valori[p]); }
+    ritorna nessuno<V>();
+}
+
+funzione contiene_t<V>(m: MappaTesto<V>, k: testo) -> booleano {
+    ritorna trova_t(m, k) < m.chiavi.lunghezza;
+}
+
+funzione rimuovi_t<V>(m: &MappaTesto<V>, k: testo) -> booleano {
+    costante p: dimensione = trova_t(m, k);
+    se p >= m.chiavi.lunghezza { ritorna falso; }
+    libera_chiave(m.chiavi[p]);
+    m.pieno[p] = 2;
+    m.n -= 1;
+    ritorna vero;
+}
+
+funzione libera_mappa_testo<V>(m: &MappaTesto<V>) {
+    per i: dimensione in 0..m.chiavi.lunghezza {
+        se m.pieno[i] == 1 { libera_chiave(m.chiavi[i]); }
+    }
+    variabile vc: [testo] = m.chiavi;
+    variabile vv: [V] = m.valori;
+    variabile vp: [byte] = m.pieno;
+    rischio { libera(vc); libera(vv); libera(vp); }
+    m.chiavi = vc;
+    m.valori = vv;
+    m.pieno = vp;
+    m.n = 0;
+    m.usati = 0;
+}
