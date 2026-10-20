@@ -1,0 +1,7 @@
+esterna funzione sqrt(x: doppio) -> doppio;
+funzione principale() -> intero {
+    variabile r: doppio;
+    rischio { r = sqrt(81.0); }
+    stampa(r);
+    ritorna 0;
+}

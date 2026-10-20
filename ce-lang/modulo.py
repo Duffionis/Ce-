@@ -2,12 +2,31 @@
 """Ce++: carica un programma e i moduli che importa con  usa "file.ce";
 
 Ogni modulo e' caricato una sola volta. I percorsi sono relativi al file che
-scrive 'usa'. Tutti i moduli finiscono nello stesso spazio dei nomi: se due
+scrive 'usa'. Un percorso che comincia con '@' (usa "@testo.ce";) si cerca nella
+libreria standard del compilatore (cartella lib/) e poi nelle cartelle elencate
+nella variabile d'ambiente CE_PERCORSO (separate da ':'). Tutti i moduli finiscono nello stesso spazio dei nomi: se due
 file definiscono lo stesso nome, e' un errore (niente nascondere).
 """
 import os
 from lessico import ErroreCe, ErroriCe, lessico
 from sintassi import analizza
+
+
+LIB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib")
+
+
+def risolvi(base, nome):
+    """Percorso reale di un modulo, o None se non si trova."""
+    if nome.startswith("@"):
+        resto = nome[1:]
+        cartelle = [LIB] + [d for d in os.environ.get("CE_PERCORSO", "").split(":") if d]
+        for d in cartelle:
+            c = os.path.join(d, resto)
+            if os.path.isfile(c):
+                return c
+        return None
+    c = os.path.join(os.path.dirname(base), nome)
+    return c if os.path.isfile(c) else None
 
 
 def carica_programma(path):
@@ -37,7 +56,7 @@ def carica_programma(path):
                 it.file = p
                 out.append(it)
                 continue
-            sub = os.path.join(os.path.dirname(p), it.path)
+            sub = risolvi(p, it.path) or os.path.join(os.path.dirname(p), it.path)
             rs = os.path.realpath(sub)
             if rs in pila:
                 giro = " -> ".join(os.path.basename(x) for x in pila[pila.index(rs):] + [rs])

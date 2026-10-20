@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 """Ce++ - uso:
     ce.py simboli|albero|emetti file.ce
-    ce.py compila file.ce [-o uscita] [--sanitizza]
-    ce.py esegui  file.ce [--sanitizza] [argomenti...]
+    ce.py compila file.ce [-o uscita] [--sanitizza] [--debug] [-l libreria]... [-L cartella]...
+    ce.py esegui  file.ce [--sanitizza] [--debug] [-l libreria]... [argomenti...]
+    ce.py formatta file.ce [--scrivi]     (rimette in ordine i rientri)
 (i vecchi nomi tokens|ast|emit|build|run funzionano ancora)"""
 import os
 import shutil
@@ -39,7 +40,7 @@ def cerca_cc():
     return None
 
 
-def compila(path, out, san):
+def compila(path, out, san, debug=False, extra=None):
     csrc = a_c(path)
     cpath = out + ".c"
     with open(cpath, "w", encoding="utf-8") as f:
@@ -49,9 +50,11 @@ def compila(path, out, san):
         print("errore: non trovo un compilatore C (gcc o clang)", file=sys.stderr)
         return 3
     cmd = [cc] + FLAG
+    if debug:
+        cmd = [x for x in cmd if x != "-O2"] + ["-O0", "-g"]
     if san:
         cmd += ["-fsanitize=address,undefined", "-fno-omit-frame-pointer"]
-    cmd += [cpath, "-o", out]
+    cmd += [cpath, "-o", out] + (extra or [])
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
         print("ERRORE INTERNO: il C generato non compila (bug del compilatore Ce++)", file=sys.stderr)
@@ -71,13 +74,45 @@ def main(argv):
     if len(argv) > 1:
         argv[1] = {"simboli": "tokens", "albero": "ast", "emetti": "emit",
                    "compila": "build", "esegui": "run"}.get(argv[1], argv[1])
-    if len(argv) < 3 or argv[1] not in ("tokens", "ast", "emit", "build", "run"):
+    if len(argv) >= 2 and argv[1] == "formatta":
+        argv[1] = "format"
+    if len(argv) < 3 or argv[1] not in ("tokens", "ast", "emit", "build", "run", "format"):
         print(__doc__)
         return 2
     cmd, path, resto = argv[1], argv[2], argv[3:]
-    san = "--sanitizza" in resto
-    resto = [x for x in resto if x != "--sanitizza"]
+    # opzioni: valgono finche' non ne arriva una sconosciuta (il resto va al programma)
+    san, debug, extra, out = False, False, [], "a.out"
+    scrivi = False
+    while resto:
+        o = resto[0]
+        if o == "--sanitizza":
+            san = True
+        elif o == "--debug":
+            debug = True
+        elif o == "--scrivi":
+            scrivi = True
+        elif o in ("-l", "-L", "-o") and len(resto) > 1:
+            if o == "-o":
+                out = resto[1]
+            else:
+                extra.append(o + resto[1])
+            resto = resto[1:]
+        else:
+            break
+        resto = resto[1:]
     try:
+        if cmd == "format":
+            from formatta import formatta
+            orig = carica(path)
+            nuovo = formatta(orig)
+            if scrivi:
+                if nuovo != orig:
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(nuovo)
+                    print(f"formattato: {path}")
+            else:
+                sys.stdout.write(nuovo)
+            return 0
         if cmd == "tokens":
             for t in lessico(carica(path)):
                 print(t)
@@ -86,13 +121,12 @@ def main(argv):
         elif cmd == "emit":
             sys.stdout.write(a_c(path))
         elif cmd == "build":
-            out = resto[resto.index("-o") + 1] if "-o" in resto else "a.out"
-            return compila(path, out, san)
+            return compila(path, out, san, debug, extra)
         else:
             tmp = tempfile.mkdtemp(prefix="ce_")
             try:
                 exe = os.path.join(tmp, "prog")
-                rc = compila(path, exe, san)
+                rc = compila(path, exe, san, debug, extra)
                 if rc:
                     return rc
                 sys.stdout.flush()

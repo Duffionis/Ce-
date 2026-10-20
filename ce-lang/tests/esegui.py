@@ -62,6 +62,33 @@ def main():
         else:
             ok += 1
             print(f"ok       {nome}")
+    # --- strumenti: formattatore, --debug, -l ---
+    if filtro in ("", "strumenti"):
+        sys.path.insert(0, os.path.dirname(QUI))
+        from formatta import formatta
+        sporco = open(os.path.join(QUI, "formato", "sporco.ce"), encoding="utf-8").read()
+        pulito = open(os.path.join(QUI, "formato", "pulito.ce"), encoding="utf-8").read()
+        prove = []
+        prove.append(("formatta: sporco -> pulito", formatta(sporco) == pulito))
+        prove.append(("formatta: e' idempotente", formatta(pulito) == pulito))
+        tutti = glob.glob(os.path.join(QUI, "*.ce")) + glob.glob(os.path.join(QUI, "..", "lib", "*.ce"))
+        parole = lambda t: "".join(t.split())
+        prove.append(("formatta: non cambia le parole",
+                      all(parole(formatta(open(f, encoding="utf-8").read())) ==
+                          parole(open(f, encoding="utf-8").read()) for f in tutti)))
+        r = subprocess.run([sys.executable, CE, "esegui", os.path.join(QUI, "formato", "collegamento.ce"), "-l", "m"],
+                           capture_output=True, text=True)
+        prove.append(("opzione -l m", r.returncode == 0 and r.stdout.strip() == "9"))
+        r = subprocess.run([sys.executable, CE, "esegui", os.path.join(QUI, "t07_funzioni.ce"), "--debug"],
+                           capture_output=True, text=True)
+        prove.append(("opzione --debug", r.returncode == 0))
+        for nome, bene in prove:
+            if bene:
+                ok += 1
+                print(f"ok       {nome}")
+            else:
+                ko += 1
+                print(f"FALLITO  {nome}")
     print(f"\n{ok} riusciti, {ko} falliti")
     return 1 if ko else 0
 

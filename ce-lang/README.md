@@ -161,6 +161,21 @@ Di base gli estremi letterali di `per` sono `intero`; con `: tipo` scegli un alt
 `argomento(i)` ritorna un `testo`; un numero troppo grande e' un `panico`.
 Con il compilatore: `python3 ce.py esegui prog.ce uno due`.
 
+## Strumenti
+
+    python3 ce.py formatta prog.ce            # stampa il file con i rientri a posto
+    python3 ce.py formatta prog.ce --scrivi   # lo riscrive
+    python3 ce.py esegui prog.ce --debug      # senza ottimizzazioni e con simboli: si puo' usare gdb
+    python3 ce.py compila prog.ce -o prog -l m -L /percorso    # collega librerie C (-lm ...)
+
+Il formattatore cambia solo gli spazi (rientri di 4, niente spazi a fine riga, al massimo una riga vuota
+di seguito): mai le parole, e non sposta le graffe. Con `--debug` i messaggi di gdb mostrano le righe
+del tuo file `.ce`, non quelle del C. Per i colori in VS Code vedi `editor/vscode/README.md`.
+
+Librerie condivise: `usa "@testo.ce";` cerca `testo.ce` nella libreria standard del compilatore
+(la cartella `lib/`), poi nelle cartelle di `CE_PERCORSO` (separate da `:`), cosi' non servono percorsi
+relativi come `../lib/testo.ce`. E' il minimo che serve oggi al posto di un gestore di pacchetti.
+
 ## Moduli
 
     usa "geometria.ce";      // al livello alto, percorso relativo a questo file
@@ -331,5 +346,4 @@ file del modulo. I tipi nei messaggi hanno nomi italiani.
 
 ## Idee per dopo
 
-Nomi privati / `pubblico`, endianness esplicita, rimozione dalla mappa e chiavi
-di testo, un backend diretto al posto del C.
+Nomi privati / `pubblico`, endianness esplicita, un backend diretto al posto del C.

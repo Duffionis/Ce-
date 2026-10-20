@@ -1,0 +1,26 @@
+{
+  "name": "ce-lang",
+  "displayName": "Ce++",
+  "description": "Colori e parentesi per Ce++, il linguaggio di sistema tutto italiano",
+  "version": "0.1.0",
+  "publisher": "duffionis",
+  "engines": { "vscode": "^1.60.0" },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "cepp",
+        "aliases": ["Ce++", "ce"],
+        "extensions": [".ce"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cepp",
+        "scopeName": "source.cepp",
+        "path": "./syntaxes/ce.tmLanguage.json"
+      }
+    ]
+  }
+}

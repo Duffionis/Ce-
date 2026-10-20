@@ -1,0 +1,18 @@
+funzione principale()   -> intero {
+    variabile x: intero = 1;
+    se x == 1 {
+        stampa("tre   spazi  dentro  la stringa {");
+    }   altrimenti {
+        stampa(
+            "a",
+            "b");
+    }
+
+    /* un commento
+con { graffa
+   dentro */
+    scegli x {
+        caso 1 { stampa("uno"); }
+    }
+    ritorna 0;
+}

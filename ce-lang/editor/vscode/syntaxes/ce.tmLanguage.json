@@ -1,0 +1,100 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Ce++",
+  "scopeName": "source.cepp",
+  "patterns": [
+    { "include": "#commenti" },
+    { "include": "#stringhe" },
+    { "include": "#numeri" },
+    { "include": "#dichiarazioni" },
+    { "include": "#parole_chiave" },
+    { "include": "#tipi" },
+    { "include": "#predefinite" },
+    { "include": "#costanti" },
+    { "include": "#chiamate" }
+  ],
+  "repository": {
+    "commenti": {
+      "patterns": [
+        { "name": "comment.line.double-slash.cepp", "match": "//.*$" },
+        { "name": "comment.block.cepp", "begin": "/\\*", "end": "\\*/" }
+      ]
+    },
+    "stringhe": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.cepp",
+          "begin": "\"", "end": "\"",
+          "patterns": [{ "name": "constant.character.escape.cepp", "match": "\\\\." }]
+        },
+        { "name": "string.quoted.single.cepp", "match": "'(\\\\.|[^'\\\\])+'" }
+      ]
+    },
+    "numeri": {
+      "patterns": [
+        { "name": "constant.numeric.hex.cepp", "match": "\\b0[xX][0-9A-Fa-f_]+\\b" },
+        { "name": "constant.numeric.binary.cepp", "match": "\\b0[bB][01_]+\\b" },
+        { "name": "constant.numeric.cepp", "match": "\\b\\d[\\d_]*(\\.\\d[\\d_]*)?([eE][+-]?\\d+)?\\b" }
+      ]
+    },
+    "dichiarazioni": {
+      "patterns": [
+        {
+          "match": "\\b(funzione)\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
+          "captures": {
+            "1": { "name": "keyword.declaration.cepp" },
+            "2": { "name": "entity.name.function.cepp" }
+          }
+        },
+        {
+          "match": "\\b(struttura|elenco)\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
+          "captures": {
+            "1": { "name": "keyword.declaration.cepp" },
+            "2": { "name": "entity.name.type.cepp" }
+          }
+        }
+      ]
+    },
+    "parole_chiave": {
+      "patterns": [
+        {
+          "name": "keyword.control.cepp",
+          "match": "\\b(se|altrimenti|mentre|per|in|ritorna|interrompi|continua|scegli|caso|rimanda)\\b"
+        },
+        {
+          "name": "keyword.other.cepp",
+          "match": "\\b(funzione|struttura|variabile|costante|usa|esterna|come|impacchettata|elenco)\\b"
+        },
+        { "name": "keyword.other.unsafe.cepp", "match": "\\b(rischio)\\b" },
+        { "name": "constant.language.cepp", "match": "\\b(vero|falso)\\b" }
+      ]
+    },
+    "tipi": {
+      "patterns": [
+        {
+          "name": "storage.type.cepp",
+          "match": "\\b(intero8|intero16|intero32|intero64|naturale8|naturale16|naturale32|naturale64|reale32|reale64|intero|lungo|corto|byte|carattere|decimale|doppio|booleano|vuoto|dimensione|testo)\\b"
+        }
+      ]
+    },
+    "predefinite": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.cepp",
+          "match": "\\b(stampa|scrivi|panico|afferma|riserva|libera|misura|numero_argomenti|argomento|lunghezza)\\b"
+        }
+      ]
+    },
+    "costanti": {
+      "patterns": [
+        { "name": "constant.other.cepp", "match": "\\b[A-Z][A-Z0-9_]+\\b" },
+        { "name": "entity.name.type.cepp", "match": "\\b[A-Z][\\p{L}\\p{N}_]*\\b" }
+      ]
+    },
+    "chiamate": {
+      "patterns": [
+        { "name": "entity.name.function.call.cepp", "match": "\\b[\\p{L}_][\\p{L}\\p{N}_]*(?=\\s*\\()" }
+      ]
+    }
+  }
+}

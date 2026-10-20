@@ -1,0 +1,3 @@
+//! il modulo '@non_esiste.ce' non esiste
+usa "@non_esiste.ce";
+funzione principale() -> intero { ritorna 0; }

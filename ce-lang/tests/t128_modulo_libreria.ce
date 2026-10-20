@@ -1,0 +1,7 @@
+//> 5|-7
+usa "@testo.ce";
+funzione principale() -> intero {
+    scrivi(numero_da_testo("5").valore, "|");
+    stampa(numero_da_testo("-7").valore);
+    ritorna 0;
+}
