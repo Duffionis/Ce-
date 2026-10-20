@@ -82,6 +82,10 @@ def main():
         r = subprocess.run([sys.executable, CE, "esegui", os.path.join(QUI, "t07_funzioni.ce"), "--debug"],
                            capture_output=True, text=True)
         prove.append(("opzione --debug", r.returncode == 0))
+        r = subprocess.run([sys.executable, os.path.join(QUI, "prova_tutorial.py")], capture_output=True, text=True)
+        prove.append(("tutorial: tutti gli esempi funzionano", r.returncode == 0))
+        if r.returncode != 0:
+            print(r.stdout)
         for nome, bene in prove:
             if bene:
                 ok += 1

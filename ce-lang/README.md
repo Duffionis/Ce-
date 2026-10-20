@@ -14,6 +14,8 @@ fare fork.
         ritorna 0;
     }
 
+Nuovo? Parti dal [tutorial in 15 minuti](docs/TUTORIAL.md).
+
 ## Provalo
 
     python3 ce.py esegui esempi/ciao.ce       # compila ed esegue
