@@ -730,6 +730,9 @@ class Gen:
                 return E(f"(({s.ctype(t)})({o.c}))", t)
             if f[0] == "s" and t[0] == "ptr":
                 return E(f"(({s.ctype(t)})(({o.c}).ptr))", t)
+            if (f[0] == "ptr" and t[0] == "f") or (f[0] == "f" and t[0] == "ptr"):
+                # indirizzo <-> puntatore a funzione: serve per eseguire codice caricato in memoria
+                return E(f"(({s.ctype(t)})(void*)({o.c}))", t)
         extra = "" if s.risk else " (le conversioni di puntatori vogliono 'rischio')"
         s.err(f"conversione non ammessa da {tstr(f)} a {tstr(t)}{extra}", n.line)
 
@@ -761,6 +764,14 @@ class Gen:
             a = s.ex(n.l, b.t)
         else:
             a = s.ex(n.l, h)
+            if a.t[0] == "ptr" and op in ("+", "-") and s.risk:
+                # aritmetica dei puntatori (solo in 'rischio'): p + n e p - n, scalati come in C
+                b = s.ex(n.r, USIZE)
+                if is_int(b.t):
+                    return E(f"({a.c} {op} (ptrdiff_t)({b.c}))", a.t)
+                if op == "-" and b.t == a.t:
+                    return E(f"((int64_t)({a.c} - {b.c}))", ("p", "i64"))
+                s.err(f"'{op}' tra un puntatore e {tstr(b.t)} non vale: serve un intero", n.line)
             b = s.ex(n.r, a.t)
         if a.t != b.t:
             s.err(f"tipi diversi: {tstr(a.t)} e {tstr(b.t)} (usa 'come' per convertire)", n.line)

@@ -1,0 +1,16 @@
+//> 30 3 vero
+// Aritmetica dei puntatori (solo in 'rischio'): p + n, p - n, p - q.
+esterna funzione memset(p: *byte, v: intero, n: dimensione) -> *byte;
+funzione principale() -> intero {
+    variabile a: [byte; 8];
+    variabile somma: intero = 0;
+    rischio {
+        variabile p: *byte = &a[0];
+        per i in 0..8 { *(p + i) = (i * 10) come byte; }
+        somma = (*(p + 3)) come intero;
+        variabile q: *byte = p + 5;
+        variabile dif: lungo = q - (p + 2);
+        scrivi(somma, " ", dif, " ", *(q - 5) == 0);
+    }
+    ritorna 0;
+}

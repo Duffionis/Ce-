@@ -1,0 +1,14 @@
+//> 42
+// Un indirizzo di memoria con codice macchina diventa una funzione chiamabile (solo in 'rischio', solo x86-64).
+esterna funzione mmap(a: *byte, lunghezza: dimensione, prot: intero, flag: intero, fd: intero, off: lungo) -> *byte;
+funzione principale() -> intero {
+    variabile p: *byte;
+    variabile f: funzione() -> intero;
+    rischio {
+        p = mmap((0 come dimensione) come *byte, 4096, 7, 34, -1, 0);
+        *p = 0xB8; *(p + 1) = 42; *(p + 2) = 0; *(p + 3) = 0; *(p + 4) = 0; *(p + 5) = 0xC3;
+        f = p come funzione() -> intero;
+    }
+    stampa(f());
+    ritorna 0;
+}

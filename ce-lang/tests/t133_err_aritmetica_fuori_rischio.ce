@@ -1,0 +1,9 @@
+//! tipi diversi
+funzione principale() -> intero {
+    variabile a: [byte; 4];
+    variabile n: intero = 1;
+    variabile x: *byte;
+    rischio { x = &a[0]; }
+    variabile y: *byte = x + n;
+    ritorna 0;
+}
