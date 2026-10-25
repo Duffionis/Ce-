@@ -29,7 +29,7 @@ PAROLE_CHIAVE = {
     "funzione", "struttura", "variabile", "costante", "se", "altrimenti",
     "mentre", "per", "in", "ritorna", "interrompi", "continua",
     "vero", "falso", "rischio", "esterna", "come", "usa", "rimanda",
-    "impacchettata", "scegli", "caso", "elenco",
+    "impacchettata", "scegli", "caso", "elenco", "nullo",
 }
 
 # Parole inglesi vietate: danno un errore che spiega come si scrive in Ce++.

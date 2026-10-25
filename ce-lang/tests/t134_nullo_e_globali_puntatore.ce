@@ -1,0 +1,17 @@
+//> vero falso 7 vero
+// 'nullo' per i puntatori; variabili globali che sono puntatori.
+variabile gp: *byte;
+variabile gq: *byte = nullo;
+funzione principale() -> intero {
+    variabile a: [byte; 2];
+    variabile fp: funzione(intero) -> intero = nullo;
+    variabile ok: booleano = vero;
+    rischio {
+        scrivi(gp == nullo, " ");
+        gp = &a[0];
+        *gp = 7;
+        scrivi(gp == nullo, " ", a[0], " ", gq == nullo && ok);
+    }
+    stampa("");
+    ritorna 0;
+}

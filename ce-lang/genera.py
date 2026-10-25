@@ -554,6 +554,11 @@ class Gen:
     def x_chr(s, n, hint):
         return E(f"((uint8_t){n.val})", ("p", "u8"))
 
+    def x_nullo(s, n, hint):
+        if hint is not None and hint[0] in ("ptr", "f"):
+            return E(f"(({s.ctype(hint)})0)", hint)
+        s.err("'nullo' ha bisogno di un tipo di puntatore dal contesto: scrivi ad esempio 'variabile p: *byte = nullo;'", n.line)
+
     def x_bool(s, n, hint):
         return E("true" if n.val else "false", BOOL)
 
@@ -1453,18 +1458,18 @@ class Gen:
         else:
             t = n.ty
         s.check_type(t, n.line, True)
-        if t[0] not in ("p", "a", "st", "f") or t == VOID or s.holds(t):
-            s.err("una variabile globale puo' essere un numero, un booleano, un array, un puntatore a funzione o una "
+        if t[0] not in ("p", "a", "st", "f", "ptr") or t == VOID or s.holds(t):
+            s.err("una variabile globale puo' essere un numero, un booleano, un array, un puntatore o una "
                   "struttura (senza fette)", n.line)
         if n.init is None:
-            init = "{0}" if t[0] != "p" else "0"
+            init = "{0}" if t[0] not in ("p", "ptr") else "0"
         else:
-            if t[0] != "p":
+            if t[0] not in ("p", "ptr"):
                 s.err("una variabile globale di questo tipo parte azzerata: togli il valore", n.line)
             e = s.ex(n.init, t)
             if e.t != t:
                 s.err(f"tipo diverso: atteso {tstr(t)}, trovato {tstr(e.t)}", n.line)
-            if not (n.init.k in ("num", "bool") or (
+            if not (n.init.k in ("num", "bool", "nullo") or (
                     n.init.k == "un" and n.init.op == "-" and n.init.e.k == "num")):
                 s.err("il valore iniziale di una variabile globale deve essere un letterale", n.line)
             init = e.c

@@ -662,6 +662,8 @@ class Parser:
             return N("bool", ln, val=True)
         if s.acc("falso"):
             return N("bool", ln, val=False)
+        if s.acc("nullo"):
+            return N("nullo", ln)
         if s.is_("("):
             s.i += 1
             ns, s.nostruct = s.nostruct, 0

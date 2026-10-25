@@ -1,0 +1,5 @@
+//! ha bisogno di un tipo di puntatore
+funzione principale() -> intero {
+    variabile x = nullo;
+    ritorna 0;
+}

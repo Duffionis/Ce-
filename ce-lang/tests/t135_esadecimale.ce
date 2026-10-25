@@ -1,0 +1,15 @@
+//> 0x0 0xff 0xdeadbeef 0xffffffffffffffff
+usa "../lib/testo.ce";
+funzione principale() -> intero {
+    variabile s: Stringa = nuova_stringa();
+    aggiungi_esadecimale(s, 0);
+    aggiungi_byte(s, 32);
+    aggiungi_esadecimale(s, 255);
+    aggiungi_byte(s, 32);
+    aggiungi_esadecimale(s, 3735928559);
+    aggiungi_byte(s, 32);
+    aggiungi_esadecimale(s, 18446744073709551615);
+    stampa(come_testo(s));
+    libera_stringa(s);
+    ritorna 0;
+}

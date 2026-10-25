@@ -58,6 +58,26 @@ funzione aggiungi_numero(s: &Stringa, n: lungo) {
     }
 }
 
+// Aggiunge un numero in esadecimale con "0x" davanti (per indirizzi e valori dei registri).
+funzione aggiungi_esadecimale(s: &Stringa, n: naturale64) {
+    aggiungi_byte(s, 48);
+    aggiungi_byte(s, 120);
+    variabile m: naturale64 = n;
+    variabile cifre: [byte; 16];
+    variabile k: dimensione = 0;
+    mentre vero {
+        costante c: naturale64 = m % 16;
+        se c < 10 { cifre[k] = (48 + c) come byte; } altrimenti { cifre[k] = (87 + c) come byte; }
+        k += 1;
+        m = m / 16;
+        se m == 0 { interrompi; }
+    }
+    mentre k > 0 {
+        k -= 1;
+        aggiungi_byte(s, cifre[k]);
+    }
+}
+
 // Una vista sul contenuto: vale finche' non aggiungi altro o liberi la stringa.
 funzione come_testo(s: Stringa) -> testo {
     ritorna s.dati[0..s.n];
